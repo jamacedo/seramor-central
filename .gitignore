@@ -1,0 +1,43 @@
+# Dependências
+node_modules
+.pnp
+.pnp.js
+
+# Build / saída do Vite
+dist
+dist-ssr
+.vite
+
+# TypeScript (build incremental)
+*.tsbuildinfo
+
+# Variáveis de ambiente (mantém apenas o exemplo)
+.env
+.env.*
+!.env.example
+
+# Arquivos locais e logs
+*.local
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Cache de ferramentas
+.eslintcache
+.cache
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Editores / IDE
+.idea
+*.swp
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Claude Code (configuração local/pessoal)
+.claude/settings.local.json

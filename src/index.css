@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-white text-ink font-sans antialiased;
+    margin: 0;
+  }
+  /* Foco visível em todos os interativos (WCAG AA — Descritivo §6). */
+  :where(button, a, input, select, textarea, [role='button']):focus-visible {
+    outline: none;
+    @apply ring-2 ring-primary ring-offset-2 ring-offset-white;
+  }
+}
+
+@layer utilities {
+  /* Microanimação do ✓ na tela de sucesso (≤400ms, não bloqueante). */
+  @keyframes pop {
+    0% {
+      transform: scale(0.6);
+      opacity: 0;
+    }
+    60% {
+      transform: scale(1.08);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  /* Respeita a zona segura inferior (notch / barra de gestos). */
+  .pb-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
