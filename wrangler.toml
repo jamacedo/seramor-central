@@ -1,0 +1,15 @@
+# Cloudflare Workers (static assets) — deploy do SPA de check-in + painel /admin.
+# Build: `npm run build` gera ./dist; o Workers Builds roda `wrangler deploy`.
+#
+# SPA fallback: NÃO usar `_redirects` com `/* /index.html 200` — o Workers Assets
+# rejeita (loop infinito: /index.html casa com /*). O caminho correto é
+# `not_found_handling = "single-page-application"`, que serve o index.html (200)
+# para qualquer rota sem arquivo — assim /admin e deep links resolvem no client
+# (src/main.tsx). A API (script.google.com) nunca passa por aqui.
+
+name = "seramor-central"
+compatibility_date = "2025-06-01"
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"

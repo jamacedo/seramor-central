@@ -85,8 +85,12 @@ npm run dev      # http://localhost:5173/admin
 
 Mock admin: 9 escalados em 4 áreas (Louvor/Acolhimento/Som/Clubinho) com estados
 variados; **Carla Mendes está sem telefone** (caso para testar a atualização de
-cadastro). O host estático precisa servir `index.html` em `/admin`
-(`public/_redirects`).
+cadastro). O fallback de SPA (servir `index.html` em `/admin`) é feito por
+`wrangler.toml` (`not_found_handling = "single-page-application"`) — ver Deploy.
+
+> **Deploy/produção:** comportamento ao commitar na `main` (env vars não
+> versionadas, cache do PWA, proteção do `/admin` via Zero Trust) e checklist de
+> go-live em **`docs/Deploy_Cloudflare.md`**.
 
 ## PWA
 
@@ -127,6 +131,9 @@ src/
 ├── admin/                # /admin (Fase 6): AdminApp, AdminShell, Visao/Servico/Cadastro, ui
 └── main.tsx              # roteia /admin → AdminApp; resto → check-in
 ```
+
+Deploy: **Cloudflare Workers (static assets)** via `wrangler.toml`. SPA fallback por
+`not_found_handling`. Detalhes e checklist em `docs/Deploy_Cloudflare.md`.
 
 ## Status das telas
 
