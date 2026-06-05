@@ -2,6 +2,8 @@
 ## Sistema de Check-in de Voluntários · Igreja Ser Amor
 **Versão:** 1.0 | **Escopo:** Fases 1–4 (check-in do voluntário) | **Backend:** Apps Script | **Data:** Mai/2026
 
+> 🛠️ **Addendum (Jun/2026):** mudanças e decisões da fase de implementação estão em [Ajustes_Fase_Implementacao.md](Ajustes_Fase_Implementacao.md) e **prevalecem** sobre este documento nos pontos indicados lá.
+
 Documento autocontido para construção do MVP. Consolida PRD v1.3, Contrato de API v1.2 e o backend `Code.gs`. As fases de gestão (5–6) estão no documento separado *"Especificação — Fases Futuras"*.
 
 ---

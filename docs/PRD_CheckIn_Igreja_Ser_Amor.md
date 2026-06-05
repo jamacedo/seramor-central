@@ -2,6 +2,8 @@
 ## Igreja Ser Amor
 **Versão:** 1.3 | **Status:** Pronto para detalhamento técnico | **Data:** Mai/2026
 
+> 🛠️ **Addendum (Jun/2026):** mudanças e decisões da fase de implementação estão em [Ajustes_Fase_Implementacao.md](Ajustes_Fase_Implementacao.md) e **prevalecem** sobre este documento nos pontos indicados lá.
+
 > **Mudanças da v1.3:** risco de sobrescrita eliminado (consolidação sempre preserva colunas de presença; chave única confirmada); adicionada decisão de arquitetura de backend (Apêndice B) — **recomendação: backend em Apps Script no MVP**, com migração reversível para Worker se necessário.
 > **Mudanças da v1.2:** semântica de `In`/`Out` (flags) vs `Checkin`/`Checkout` (carimbos) definida; App Script mantém a consolidação; colunas de substituto fora do MVP; fluxo de presença fora da escala definido como SHOULD; máquina de estados simplificada pelas flags.
 > **Mudanças da v1.1:** QR Code genérico (sem parâmetro de área); inferência de área/culto via telefone + data/hora; suporte a check-out no mesmo QR; remoção do KV Store; estrutura de dados alinhada às planilhas reais.

@@ -1,6 +1,8 @@
 # Contrato de API — Check-in Igreja Ser Amor
 **Versão:** 1.2 | **Acompanha:** PRD v1.3 | **Escopo:** MVP (Fases 1–4)
 
+> 🛠️ **Addendum (Jun/2026):** mudanças e decisões da fase de implementação estão em [Ajustes_Fase_Implementacao.md](Ajustes_Fase_Implementacao.md) e **prevalecem** sobre este documento nos pontos indicados lá.
+
 Contrato **portável**, mas o **backend definido é Apps Script**. Lógica e payloads valeriam igual num Worker.
 
 > **Mudanças da v1.2:** spreadsheet único (índice de voluntários compilado na própria planilha de check-in); janelas de turno definidas; backend = Apps Script; US-10 entra no MVP; check-out desejável (não obrigatório); sem limite de tentativas.

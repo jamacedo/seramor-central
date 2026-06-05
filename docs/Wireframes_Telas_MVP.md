@@ -2,6 +2,8 @@
 ## Sistema de Check-in de Voluntários · Igreja Ser Amor
 **Versão:** 1.0 | **Companheiro de:** Descritivo de Design de Telas v1.0 | **Base:** Especificação MVP + PRD v1.3 | **Data:** Jun/2026
 
+> 🛠️ **Addendum (Jun/2026):** mudanças e decisões da fase de implementação estão em [Ajustes_Fase_Implementacao.md](Ajustes_Fase_Implementacao.md) e **prevalecem** sobre este documento nos pontos indicados lá.
+
 > Wireframes de baixa/média fidelidade em texto. Cada tela traz: **(1)** layout visual ASCII, **(2)** anatomia campo a campo, **(3)** comportamento/estados e **(4)** dados consumidos do contrato de API. Medidas em viewport mobile de referência **360–390px** de largura. Use como blueprint direto para o Figma.
 
 ---

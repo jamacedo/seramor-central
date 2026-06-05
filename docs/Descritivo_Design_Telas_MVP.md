@@ -2,6 +2,8 @@
 ## Sistema de Check-in de Voluntários · Igreja Ser Amor
 **Versão:** 1.0 | **Escopo de design:** jornada do voluntário (QR → telefone → check-in/out) | **Base:** Especificação MVP + PRD v1.3 | **Data:** Jun/2026
 
+> 🛠️ **Addendum (Jun/2026):** mudanças e decisões da fase de implementação estão em [Ajustes_Fase_Implementacao.md](Ajustes_Fase_Implementacao.md) e **prevalecem** sobre este documento nos pontos indicados lá.
+
 > Documento de referência para criação das telas no Figma. Traduz a máquina de estados e os requisitos funcionais (US-01 a US-10) em um sistema de design enxuto, acessível e otimizado para velocidade (meta: check-in < 15s). Não cobre os painéis `/lider` e `/admin` (Fases 5–6).
 
 ---
