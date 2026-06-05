@@ -2,6 +2,8 @@ import { useCheckinFlow } from '@/state/useCheckinFlow'
 import { PhoneScreen } from '@/screens/PhoneScreen'
 import { CanCheckinScreen } from '@/screens/CanCheckinScreen'
 import { InServiceScreen } from '@/screens/InServiceScreen'
+import { MultipleScreen } from '@/screens/MultipleScreen'
+import { PresencaExtraScreen } from '@/screens/PresencaExtraScreen'
 import { SuccessScreen } from '@/screens/SuccessScreen'
 import { LoadingScreen } from '@/screens/LoadingScreen'
 import { ClosedScreen } from '@/screens/ClosedScreen'
@@ -63,6 +65,30 @@ export default function App() {
         />
       )
 
+    // T6 · MULTIPLE — seleção de escala (US-07).
+    case 'multiple':
+      return (
+        <MultipleScreen
+          data={view.data}
+          onSelect={flow.selectOption}
+          onChangeNumber={flow.changeNumber}
+        />
+      )
+
+    // T7 · US-10 — presença fora da escala.
+    case 'presencaExtra':
+      return (
+        <PresencaExtraScreen
+          telefone={view.telefone}
+          nome={view.nome}
+          areaSugerida={view.areaSugerida}
+          oneTap={flow.oneTap}
+          onOneTapChange={flow.setOneTap}
+          onConfirm={flow.confirmPresencaExtra}
+          onBack={() => flow.resolvePhone(view.telefone)}
+        />
+      )
+
     case 'closed':
       return <ClosedScreen />
 
@@ -96,6 +122,24 @@ export default function App() {
           title="Número não encontrado"
           body={view.data.message}
           primary={{ label: 'Tentar outro número', onClick: flow.changeNumber }}
+        />
+      )
+
+    // T2b · NOT_SCHEDULED — cadastrado, sem escala hoje (US-03).
+    // Oferece a US-10 se o backend autorizar (telefone cadastrado).
+    case 'notScheduled':
+      return (
+        <MessageScreen
+          icon={<AlertTriangle size={64} className="text-warning" />}
+          title={`Olá, ${view.data.nome.split(' ')[0]}!`}
+          // A saudação já vai no título; remove o "Olá, Nome!" do corpo.
+          body={view.data.message.replace(/^Olá,[^!]*!\s*/, '')}
+          primary={
+            view.data.podeRegistrarForaDaEscala
+              ? { label: 'Vou servir hoje mesmo assim', onClick: flow.goPresencaExtra }
+              : undefined
+          }
+          onChangeNumber={flow.changeNumber}
         />
       )
 

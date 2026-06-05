@@ -2,21 +2,27 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   checkin as apiCheckin,
   checkout as apiCheckout,
+  registerOutsideSchedule as apiRegister,
   resolve as apiResolve,
   OfflineError,
 } from '@/api/client'
 import type {
+  Area,
   CheckinResult,
   CheckinState,
   CheckoutResult,
   Escala,
+  OpcaoMultipla,
   ResolveCanCheckin,
   ResolveDone,
   ResolveInService,
+  ResolveMultiple,
   ResolveNotFound,
+  ResolveNotScheduled,
 } from '@/types/api'
 import { clearPhone, loadPhone, savePhone } from '@/lib/storage'
 import { normalizePhone } from '@/lib/phone'
+import { inferTurno } from '@/lib/date'
 
 // View atual da SPA. Cada estado da máquina mapeia para uma tela
 // (Matriz Estado → Tela — Wireframes).
@@ -27,11 +33,21 @@ export type View =
   | { kind: 'inService'; data: ResolveInService }
   | { kind: 'done'; data: ResolveDone }
   | { kind: 'notFound'; data: ResolveNotFound }
+  | { kind: 'notScheduled'; data: ResolveNotScheduled; telefone: string }
+  | { kind: 'multiple'; data: ResolveMultiple; telefone: string }
+  | { kind: 'presencaExtra'; telefone: string; nome: string; areaSugerida?: Area }
   | { kind: 'successCheckin'; data: CheckinResult }
   | { kind: 'successCheckout'; data: CheckoutResult }
   | { kind: 'error' }
   | { kind: 'offline' }
   | { kind: 'closed' }
+
+/** Dados que a US-10 coleta no formulário (turno é inferido pela hora). */
+export interface PresencaExtraForm {
+  area: Area
+  funcao: string
+  motivo: string
+}
 
 interface FlowApi {
   view: View
@@ -40,8 +56,12 @@ interface FlowApi {
   setPhone: (digits: string) => void
   setOneTap: (next: boolean) => void
   submitPhone: () => void
+  resolvePhone: (telefone: string) => void
   confirmCheckin: (escala: Escala) => void
   confirmCheckout: (escala: Escala) => void
+  selectOption: (nome: string, opcao: OpcaoMultipla) => void
+  goPresencaExtra: () => void
+  confirmPresencaExtra: (telefone: string, form: PresencaExtraForm) => void
   changeNumber: () => void
   finish: () => void
   retry: () => void
@@ -59,7 +79,7 @@ export function useCheckinFlow(): FlowApi {
   }, [])
 
   // Mapeia um envelope de /resolve para a view correspondente.
-  const applyResolve = useCallback((env: Awaited<ReturnType<typeof apiResolve>>) => {
+  const applyResolve = useCallback((tel: string, env: Awaited<ReturnType<typeof apiResolve>>) => {
     if (!env.ok || !env.state) {
       setView({ kind: 'error' })
       return
@@ -75,13 +95,15 @@ export function useCheckinFlow(): FlowApi {
       case 'DONE':
         setView({ kind: 'done', data: env.data as ResolveDone })
         break
-      case 'NOT_FOUND':
-        setView({ kind: 'notFound', data: env.data as ResolveNotFound })
+      case 'NOT_SCHEDULED':
+        setView({ kind: 'notScheduled', data: env.data as ResolveNotScheduled, telefone: tel })
         break
-      // NOT_SCHEDULED e MULTIPLE: fora do caminho feliz (Fase 3 — SHOULD).
-      // Tratados como orientação genérica até serem implementados.
+      case 'MULTIPLE':
+        setView({ kind: 'multiple', data: env.data as ResolveMultiple, telefone: tel })
+        break
+      case 'NOT_FOUND':
       default:
-        setView({ kind: 'notFound', data: { message: env.data && 'message' in (env.data as object) ? (env.data as ResolveNotFound).message : 'Não foi possível resolver sua escala.' } })
+        setView({ kind: 'notFound', data: env.data as ResolveNotFound })
     }
   }, [])
 
@@ -90,7 +112,7 @@ export function useCheckinFlow(): FlowApi {
       setLastAction(() => () => doResolve(tel))
       setView({ kind: 'loading', message: 'Buscando sua escala…' })
       apiResolve(tel)
-        .then((env) => applyResolve(env))
+        .then((env) => applyResolve(tel, env))
         .catch(handleNetworkError)
     },
     [applyResolve, handleNetworkError],
@@ -159,6 +181,69 @@ export function useCheckinFlow(): FlowApi {
     [oneTap, doResolve, handleNetworkError],
   )
 
+  // T6 · seleção de uma escala (US-07): navega direto ao estado da linha
+  // escolhida, sem nova chamada (a opção já carrega seu `estado`).
+  const selectOption = useCallback((nome: string, opcao: OpcaoMultipla) => {
+    const escala: Escala = {
+      telefone: opcao.telefone,
+      data: opcao.data,
+      area: opcao.area,
+      turno: opcao.turno,
+      funcao: opcao.funcao,
+    }
+    if (opcao.estado === 'IN_SERVICE') {
+      setView({ kind: 'inService', data: { nome, escala, checkinAt: opcao.checkinAt ?? '' } })
+    } else if (opcao.estado === 'DONE') {
+      setView({ kind: 'done', data: { nome, escala, checkinAt: opcao.checkinAt ?? '', checkoutAt: '' } })
+    } else {
+      setView({ kind: 'canCheckin', data: { nome, escala } })
+    }
+  }, [])
+
+  // T2b → T7: abre o formulário de presença fora da escala (US-10).
+  // Função inicia vazia neste cenário; só a área é pré-sugerida.
+  const goPresencaExtra = useCallback(() => {
+    setView((v) =>
+      v.kind === 'notScheduled'
+        ? {
+            kind: 'presencaExtra',
+            telefone: v.telefone,
+            nome: v.data.nome,
+            areaSugerida: v.data.areaSugerida,
+          }
+        : v,
+    )
+  }, [])
+
+  const confirmPresencaExtra = useCallback(
+    (telefone: string, form: PresencaExtraForm) => {
+      const run = () => {
+        setLastAction(() => run)
+        setView({ kind: 'loading', message: 'Confirmando…' })
+        apiRegister({
+          telefone,
+          area: form.area,
+          turno: inferTurno(),
+          funcao: form.funcao,
+          motivo: form.motivo,
+        })
+          .then((env) => {
+            // US-10 é, na prática, um check-in → reusa a tela de sucesso do
+            // check-in (PresencaExtraResult contém nome/area/checkinAt).
+            if (env.ok && env.data) {
+              if (oneTap) savePhone(telefone)
+              setView({ kind: 'successCheckin', data: env.data })
+            } else {
+              setView({ kind: 'error' })
+            }
+          })
+          .catch(handleNetworkError)
+      }
+      run()
+    },
+    [oneTap, handleNetworkError],
+  )
+
   const changeNumber = useCallback(() => {
     clearPhone()
     setPhone('')
@@ -184,8 +269,12 @@ export function useCheckinFlow(): FlowApi {
     setPhone,
     setOneTap,
     submitPhone,
+    resolvePhone: doResolve,
     confirmCheckin,
     confirmCheckout,
+    selectOption,
+    goPresencaExtra,
+    confirmPresencaExtra,
     changeNumber,
     finish,
     retry,

@@ -21,19 +21,15 @@ type SuccessScreenProps =
     }
 
 // T8 · Sucesso — variações check-in / check-out (US-04/05).
+// A US-10 reaproveita a variação "checkin" (é um check-in fora da escala).
 export function SuccessScreen(props: SuccessScreenProps) {
   const { variant, data, oneTapSaved, onFinish } = props
 
   const title = variant === 'checkin' ? 'Check-in confirmado!' : 'Check-out confirmado!'
 
   const rows =
-    variant === 'checkin'
+    variant === 'checkout'
       ? [
-          { icon: '👤', label: <strong>{data.nome}</strong> },
-          { icon: '📍', label: data.area },
-          { icon: '⏱', label: <span>Entrada {timeOf(data.checkinAt)}</span> },
-        ]
-      : [
           { icon: '👤', label: <strong>{data.nome}</strong> },
           { icon: '📍', label: data.area },
           {
@@ -46,6 +42,12 @@ export function SuccessScreen(props: SuccessScreenProps) {
               </span>
             ),
           },
+        ]
+      : [
+          // check-in e US-10 compartilham o mesmo resumo (nome · área · entrada).
+          { icon: '👤', label: <strong>{data.nome}</strong> },
+          { icon: '📍', label: data.area },
+          { icon: '⏱', label: <span>Entrada {timeOf((data as CheckinResult).checkinAt)}</span> },
         ]
 
   return (

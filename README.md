@@ -27,14 +27,26 @@ Sem `VITE_API_URL` configurado, a app usa o **mock fiel ao Contrato de API v1.2*
 
 ### Telefones de teste (mock)
 
-| Telefone        | Cenário                                            |
-| --------------- | -------------------------------------------------- |
-| `11999998888`   | Maria Silva · Louvor · Vocal — caminho feliz ⭐    |
-| `11888887777`   | João Pereira · Som · Técnico                       |
-| qualquer outro  | `NOT_FOUND`                                         |
+| Telefone        | Estado resolvido | Cenário                                                        |
+| --------------- | ---------------- | -------------------------------------------------------------- |
+| `11999998888`   | `CAN_CHECKIN`    | Maria Silva · Louvor · Vocal — caminho feliz ⭐                |
+| `11888887777`   | `CAN_CHECKIN`    | João Pereira · Som · Técnico                                   |
+| `11777776666`   | `NOT_SCHEDULED`  | Ana Costa · cadastrada, sem escala hoje → habilita a **US-10** |
+| `11666665555`   | `MULTIPLE`       | Carla Souza · 2 escalas hoje (Louvor + Acolhimento "Em serviço") |
+| `11000000000`   | erro (tela E)    | simula `SHEET_UNAVAILABLE` → "Algo deu errado" + Tentar novamente |
+| `11000000001`   | offline (tela O) | simula ausência de conexão → "Você está sem conexão"          |
+| qualquer outro  | `NOT_FOUND`      | telefone fora da base                                          |
 
-Fluxo demonstrável: digitar `11999998888` → **Confirmar Check-in** → sucesso →
-reabrir (one-tap salvo) → **Confirmar Check-out** → sucesso com duração.
+**Fluxos demonstráveis:**
+- **Caminho feliz:** `11999998888` → Confirmar Check-in → sucesso → reabrir
+  (one-tap salvo) → Confirmar Check-out → sucesso com duração.
+- **Não escalado + presença fora da escala (US-10):** `11777776666` → "Vou servir
+  hoje mesmo assim" → preencher Área/Função/Motivo → Confirmar presença.
+- **Escala múltipla (US-07):** `11666665555` → selecionar uma área → check-in/out
+  da linha escolhida (o turno é o mesmo nas duas, então sempre cai na seleção).
+
+> O mock guarda o estado `In`/`Out` em memória durante a sessão; um *reload*
+> reinicia a "planilha". Os carimbos de horário usam o relógio do navegador.
 
 ### Apontando para o backend real
 
@@ -67,8 +79,10 @@ src/
 | T1 Entrada | `phone` | ✅ |
 | T3 CAN_CHECKIN | `canCheckin` | ✅ caminho feliz |
 | T4 IN_SERVICE | `inService` | ✅ caminho feliz |
-| T8 Sucesso (check-in/out) | `success*` | ✅ |
+| T8 Sucesso (check-in/out/US-10) | `success*` | ✅ |
 | L / E / O transversais | — | ✅ |
-| T2a NOT_FOUND · T5 DONE | — | ✅ básico |
-| T2b NOT_SCHEDULED · T6 MULTIPLE · T7 US-10 | — | 🔲 SHOULD (próxima iteração) |
+| T2a NOT_FOUND · T5 DONE | — | ✅ |
+| T2b NOT_SCHEDULED | `notScheduled` | ✅ |
+| T6 MULTIPLE (US-07) | `multiple` | ✅ |
+| T7 Presença fora da escala (US-10) | `presencaExtra` | ✅ |
 ```

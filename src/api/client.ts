@@ -9,9 +9,11 @@ import type {
   CheckinResult,
   CheckoutRequest,
   CheckoutResult,
+  PresencaExtraRequest,
+  PresencaExtraResult,
   ResolveRequest,
 } from '@/types/api'
-import { mockApi } from './mock'
+import { mockApi, OFFLINE_PHONE } from './mock'
 
 const API_URL = import.meta.env.VITE_API_URL as string | undefined
 const TIMEOUT_MS = 5000
@@ -47,6 +49,8 @@ async function post(req: ApiRequest): Promise<ApiEnvelope> {
   // Sem backend configurado → mock local (latência simulada leve).
   if (!API_URL) {
     await new Promise((r) => setTimeout(r, 600))
+    // Gatilho de teste: simula ausência de conexão (tela O).
+    if (req.telefone === OFFLINE_PHONE) throw new OfflineError()
     return mockApi(req)
   }
 
@@ -91,4 +95,12 @@ export function checkout(
   e: Pick<CheckoutRequest, 'telefone' | 'data' | 'area' | 'turno'>,
 ): Promise<ApiEnvelope<CheckoutResult>> {
   return post({ action: 'checkout', ...e }) as Promise<ApiEnvelope<CheckoutResult>>
+}
+
+export function registerOutsideSchedule(
+  e: Omit<PresencaExtraRequest, 'action'>,
+): Promise<ApiEnvelope<PresencaExtraResult>> {
+  return post({ action: 'registerOutsideSchedule', ...e }) as Promise<
+    ApiEnvelope<PresencaExtraResult>
+  >
 }

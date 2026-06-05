@@ -30,3 +30,17 @@ export function formatDuration(min: number): string {
   const m = min % 60
   return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`
 }
+
+/**
+ * Infere o turno pela hora atual (janelas do Contrato §1: Manhã 06–13,
+ * Noite 15–22). Usado na US-10, cujo formulário não pede turno.
+ */
+export function inferTurno(date = new Date()): 'Manhã' | 'Noite' {
+  const hourStr = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: TZ,
+    hour: '2-digit',
+    hour12: false,
+  }).format(date)
+  const hour = Number(hourStr)
+  return hour < 14 ? 'Manhã' : 'Noite'
+}
