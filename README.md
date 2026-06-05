@@ -6,7 +6,8 @@ telefone**; o sistema infere área, função, turno e culto cruzando com a escal
 do dia e oferece **check-in ou check-out** conforme o estado.
 
 > Fase atual: **MVP (Fases 1–4)** — caminho feliz implementado.
-> Backend: Apps Script (Web App). Ver `docs/`.
+> **Fase 6 (painel `/admin`)** em andamento — front scaffolded contra mock
+> (ver abaixo). Backend: Apps Script (Web App). Ver `docs/`.
 
 ## Stack
 
@@ -59,6 +60,34 @@ cp .env.example .env
 O client envia `POST` com `text/plain` (evita preflight CORS no Apps Script) e
 faz **retry automático 1×** em timeout > 5s (Especificação §9).
 
+## Painel `/admin` (Fase 6 — em andamento)
+
+Painel administrativo na rota **`/admin`**, no mesmo bundle, protegido por
+**Cloudflare Zero Trust** (sem login no app). Spec: `docs/Especificacao_Fase6_Admin.md`.
+
+Três frentes: **Visão** (dashboard global por área), **Serviço** (check-in/out
+manual por nome) e **Cadastro/telefone** (atualização do telefone na origem +
+compilada).
+
+```bash
+npm run dev      # http://localhost:5173/admin
+```
+
+> O **backend Apps Script dos endpoints de admin ainda não existe**. O flag
+> **`VITE_ADMIN_MOCK=1`** (no `.env`) faz o `/admin` rodar contra o mock
+> (`src/api/adminMock.ts`) mesmo com `VITE_API_URL` apontando pro backend real do
+> MVP. Remova/`0` quando o Apps Script implementar `adminDashboard` / `adminSearch`
+> / `adminCheckin` / `adminCheckout` / `adminUpdatePhone`.
+
+> Em dev/mock a identidade do operador é fixa (`admin@seramor.com.br`). Em
+> produção, vem do `/cdn-cgi/access/get-identity` do Zero Trust; o **Sair** dispara
+> `/cdn-cgi/access/logout`.
+
+Mock admin: 9 escalados em 4 áreas (Louvor/Acolhimento/Som/Clubinho) com estados
+variados; **Carla Mendes está sem telefone** (caso para testar a atualização de
+cadastro). O host estático precisa servir `index.html` em `/admin`
+(`public/_redirects`).
+
 ## PWA
 
 App instalável ("Adicionar à tela de início"). Requer **hospedagem estática no
@@ -85,14 +114,18 @@ node scripts/generate-icons.mjs
 
 ```
 src/
-├── types/api.ts          # tipos do Contrato de API v1.2
-├── lib/                  # phone (máscara/normalização), date, storage (one-tap), cn
+├── types/                # api.ts (Contrato v1.2) · admin.ts (Fase 6)
+├── lib/                  # phone, date, storage (one-tap), cn, zeroTrust, adminEnv
 ├── api/
-│   ├── client.ts         # POST text/plain, timeout + retry; mock se sem VITE_API_URL
-│   └── mock.ts           # backend fake fiel ao contrato (máquina de estados In/Out)
-├── state/useCheckinFlow  # máquina de estados → view
+│   ├── client.ts         # POST text/plain, timeout + retry; transporte `send` reusável
+│   ├── mock.ts           # backend fake do MVP (máquina de estados In/Out)
+│   ├── adminClient.ts    # endpoints da Fase 6; mock se VITE_ADMIN_MOCK / sem VITE_API_URL
+│   └── adminMock.ts      # backend fake do /admin (dashboard, busca, ações, telefone)
+├── state/useCheckinFlow  # máquina de estados → view (check-in)
 ├── components/           # Button, PhoneInput, Toggle, Screen, AppHeader, SummaryCard, icons
-└── screens/              # T1 Phone · T3 CanCheckin · T4 InService · T8 Success · L/E/O · terminais
+├── screens/              # check-in: T1 Phone · T3/T4 · T8 Success · L/E/O · terminais
+├── admin/                # /admin (Fase 6): AdminApp, AdminShell, Visao/Servico/Cadastro, ui
+└── main.tsx              # roteia /admin → AdminApp; resto → check-in
 ```
 
 ## Status das telas

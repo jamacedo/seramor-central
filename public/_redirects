@@ -1,0 +1,5 @@
+# SPA fallback (Cloudflare Pages / Netlify): rotas sem arquivo servem o
+# index.html para o roteamento client-side resolver (/admin → painel Fase 6).
+# O Cloudflare Pages serve assets reais antes desta regra.
+# O acesso a /admin é protegido por uma policy do Cloudflare Zero Trust (Access).
+/*    /index.html    200

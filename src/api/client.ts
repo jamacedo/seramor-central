@@ -36,28 +36,23 @@ export class NetworkError extends Error {
   }
 }
 
-async function postOnce(req: ApiRequest, signal: AbortSignal): Promise<ApiEnvelope> {
+async function postOnce(body: unknown, signal: AbortSignal): Promise<ApiEnvelope> {
   // Apps Script: text/plain evita preflight CORS (Contrato §6).
   const res = await fetch(API_URL as string, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(req),
+    body: JSON.stringify(body),
     signal,
   })
   // HTTP status não é confiável (Apps Script sempre 200); confiar no corpo.
   return (await res.json()) as ApiEnvelope
 }
 
-/** POST com timeout + 1 retry silencioso (Especificação §9). */
-async function post(req: ApiRequest): Promise<ApiEnvelope> {
-  // Sem backend configurado → mock local (latência simulada leve).
-  if (!API_URL) {
-    await new Promise((r) => setTimeout(r, 600))
-    // Gatilho de teste: simula ausência de conexão (tela O).
-    if (req.telefone === OFFLINE_PHONE) throw new OfflineError()
-    return mockApi(req)
-  }
-
+/**
+ * Transporte de rede genérico: timeout + 1 retry silencioso (Especificação §9).
+ * Não conhece o formato do corpo — reusado pelo MVP e pelo admin (Fase 6).
+ */
+export async function send(body: unknown): Promise<ApiEnvelope> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     throw new OfflineError()
   }
@@ -66,7 +61,7 @@ async function post(req: ApiRequest): Promise<ApiEnvelope> {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
     try {
-      return await postOnce(req, controller.signal)
+      return await postOnce(body, controller.signal)
     } catch (err) {
       if (attempt === 1) {
         if (typeof navigator !== 'undefined' && navigator.onLine === false) {
@@ -80,6 +75,18 @@ async function post(req: ApiRequest): Promise<ApiEnvelope> {
     }
   }
   throw new NetworkError()
+}
+
+/** POST do fluxo do voluntário (mock local quando sem backend). */
+async function post(req: ApiRequest): Promise<ApiEnvelope> {
+  // Sem backend configurado → mock local (latência simulada leve).
+  if (!API_URL) {
+    await new Promise((r) => setTimeout(r, 600))
+    // Gatilho de teste: simula ausência de conexão (tela O).
+    if (req.telefone === OFFLINE_PHONE) throw new OfflineError()
+    return mockApi(req)
+  }
+  return send(req)
 }
 
 // ── API tipada por ação ────────────────────────────────────────────

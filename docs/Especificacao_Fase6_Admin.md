@@ -1,12 +1,15 @@
 # Especificação + Wireframes — Fase 6 (Visão Central / Admin)
 ## Sistema de Check-in de Voluntários · Igreja Ser Amor
-**Versão:** 0.1 (enxuta) | **Escopo:** Painel `/admin` — 3 frentes | **Base:** PRD v1.3, Especificação Fases Futuras §3, Contrato v1.2, Addendum Jun/2026 | **Data:** Jun/2026
+**Versão:** 0.2 (enxuta + addendum de implementação) | **Escopo:** Painel `/admin` — 3 frentes | **Base:** PRD v1.3, Especificação Fases Futuras §3, Contrato v1.2, Addendum Jun/2026 | **Data:** Jun/2026
 
 > Versão **enxuta e acionável** da Fase 6. Cobre só o que foi priorizado:
 > **(1) Visão global**, **(2) Check-in/out manual por nome** e **(3) Atualização de telefone**.
 > Demais itens da Fase 6 do doc de Fases Futuras (override de escala, CRUD completo
 > de voluntários) ficam **fora deste recorte**. Marcações `[A DEFINIR]` seguem o
 > estilo dos specs anteriores.
+>
+> 🛠️ **A §8 (Addendum de implementação · front)** registra o que foi construído e
+> **prevalece** sobre as §§ anteriores nos pontos indicados (padrão do MVP).
 
 ---
 
@@ -401,6 +404,75 @@ telefone; em seguida atualiza a linha em **`Base Voluntarios`**. `gravado` indic
 
 ---
 
-*Especificação + Wireframes da Fase 6 (enxuta) — painel `/admin` com Visão global, Check-in/out
-manual e Atualização de telefone. Reaproveita o backend Apps Script e o frontend do MVP; acesso
-por Cloudflare Zero Trust. Acompanha PRD v1.3, Especificação Fases Futuras e Contrato v1.2.*
+## 8. Addendum de implementação (front · Jun/2026)
+
+> Consolida o que foi efetivamente construído no frontend (React) e **prevalece**
+> sobre as §§ acima nos pontos abaixo. O **backend Apps Script dos `action`s de
+> admin ainda não existe** — o `/admin` roda contra um **mock** fiel a esta spec.
+
+### 8.1 Stack, rota e mock toggle
+> Supera §1 (Onde mora) e §2.
+
+- **Rota `/admin`** no mesmo bundle, via **roteamento por path** em `src/main.tsx`
+  (`/admin` → `AdminApp`; resto → check-in). Sem dependência de router.
+  `public/_redirects` garante o SPA fallback no host estático (`/* → /index.html`).
+- **Mock toggle `VITE_ADMIN_MOCK=1`** (`.env`): faz o `/admin` usar `src/api/adminMock.ts`
+  mesmo com `VITE_API_URL` apontando pro backend real do MVP. Desligar quando o
+  backend admin existir. Lógica em `src/lib/adminEnv.ts` (`ADMIN_MOCK`).
+- **Camada de API:** `src/api/adminClient.ts` reusa o transporte `send` do MVP
+  (timeout + retry). Tipos em `src/types/admin.ts`.
+- **Identidade/Sair:** `src/lib/zeroTrust.ts` — `getIdentity()` lê o
+  `/cdn-cgi/access/get-identity` (dev/mock → `admin@seramor.com.br`); `logout()`
+  vai para `/cdn-cgi/access/logout` (dev/mock → `/`).
+
+### 8.2 Shell / navegação
+> Supera §4 (Shell) e os headers dos wireframes.
+
+- Header: **removida a hora**; no lugar, **botão Sair (ícone apenas)** no canto
+  superior direito. Um **spinner discreto** aparece só durante o polling.
+- **Barra inferior com ícones**: Visão (grade) · Serviço (pessoa-check).
+
+### 8.3 Visão (F6-A)
+> Supera §4 F6-A.
+
+- Filtro de **Turno** com rótulo **"Todos"** (não "Todas"); **valor inicial pelo
+  período do dia** (`inferTurno`: Manhã antes das 14h, senão Noite).
+- **Ordenação das áreas** virou **controle interativo** (não mais rótulo fixo):
+  **Menor % primeiro** (default) · **Maior % primeiro** · **Nome (A–Z)**. A ordem é
+  **responsabilidade do front** (o `adminDashboard` devolve sem ordem garantida).
+- Tocar num card de área abre **Serviço filtrado pela área**, **herdando o turno**
+  atual do Dashboard (evita lista vazia).
+
+### 8.4 Serviço (F6-B)
+> Supera §4 F6-B e §5.2.
+
+- **"Todas as áreas" lista todos** os escalados do turno; entrar pela aba abre com
+  "Todas as áreas" + turno do período. **`adminSearch` aceita `nome` vazio**
+  (lista todos do filtro) — **diverge** do "nome obrigatório (mín. 2)" do contrato.
+- **Ordenação da lista** (novo controle): **Status** (default — Pendente → Em
+  serviço → Concluído, nome como desempate) · **Alfabética (Nome)** · **Alfabética (Área)**.
+- **Painel de ação** redesenhado no **estilo do check-in do voluntário**: dados da
+  pessoa **centralizados** + **botão (Confirmar Check-in/Check-out) fixo na base** +
+  link **✎ Atualizar cadastro** (abre F6-C para a pessoa).
+
+### 8.5 Cadastro/telefone (F6-C)
+Sem mudanças de regra: grava **origem + compilada**, com sucesso/erro
+(`DUPLICATE_PHONE`) como na §4/§5.4. Busca de fallback reusa o `adminSearch` (hoje)
+— a busca **base-wide** real continua como pendência (§7).
+
+### 8.6 Estrutura de arquivos
+```
+src/admin/        AdminApp · AdminShell · VisaoScreen · ServicoScreen · CadastroScreen · ui
+src/api/          adminClient.ts · adminMock.ts
+src/types/        admin.ts
+src/lib/          zeroTrust.ts · adminEnv.ts
+src/main.tsx      roteamento /admin
+public/_redirects SPA fallback
+```
+
+---
+
+*Especificação + Wireframes da Fase 6 (enxuta, v0.2 com addendum de implementação) —
+painel `/admin` com Visão global, Check-in/out manual e Atualização de telefone.
+Reaproveita o backend Apps Script e o frontend do MVP; acesso por Cloudflare Zero
+Trust. Acompanha PRD v1.3, Especificação Fases Futuras e Contrato v1.2.*
