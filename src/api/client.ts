@@ -16,7 +16,11 @@ import type {
 import { mockApi, OFFLINE_PHONE } from './mock'
 
 const API_URL = import.meta.env.VITE_API_URL as string | undefined
-const TIMEOUT_MS = 5000
+// Apps Script: ~4s quente / ~7–8s no cold start (após otimizar o Code.gs para
+// ler só o necessário). 12s cobre o cold start com folga sem deixar a tela de
+// erro demorar demais num travamento real. Para ir abaixo de ~4s, o caminho é
+// CacheService ou migrar a rota para um Worker (mitigação do PRD §9).
+const TIMEOUT_MS = 12000
 
 export class OfflineError extends Error {
   constructor() {

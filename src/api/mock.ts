@@ -108,31 +108,30 @@ function resolve(telefone: string): ApiEnvelope {
   if (rows.length === 0) {
     const base = baseVoluntarios.find((b) => b.telefone === telefone && b.ativo)
     if (base) {
+      // A cópia é renderizada pelo front (lib/copy.ts); aqui só os dados.
       return ok(
         {
           nome: base.nome,
           podeRegistrarForaDaEscala: true,
           areaSugerida: base.area,
           funcaoSugerida: base.funcao,
-          message: `Olá, ${base.nome.split(' ')[0]}! Não localizamos você na escala de hoje. Caso tenha sido escalada(o), por favor, procure a Base de Voluntários.`,
         },
         'NOT_SCHEDULED',
       )
     }
-    return ok(
-      {
-        message:
-          'Não encontramos este número na nossa base de voluntários. Por favor, procure o líder do seu ministério para atualizar seu cadastro.',
-      },
-      'NOT_FOUND',
-    )
+    return ok({}, 'NOT_FOUND')
   }
 
   if (rows.length >= 2) {
+    // Sem telefone por opção (igual ao backend real).
     const opcoes: OpcaoMultipla[] = rows.map((r) => ({
-      ...escalaOf(r),
+      data: r.data,
+      area: r.area,
+      turno: r.turno,
+      funcao: r.funcao,
       estado: stateOf(r),
       ...(r.checkinAt ? { checkinAt: r.checkinAt } : {}),
+      ...(r.checkoutAt ? { checkoutAt: r.checkoutAt } : {}),
     }))
     return ok({ nome: rows[0].nome, opcoes }, 'MULTIPLE')
   }

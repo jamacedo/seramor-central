@@ -59,7 +59,7 @@ interface FlowApi {
   resolvePhone: (telefone: string) => void
   confirmCheckin: (escala: Escala) => void
   confirmCheckout: (escala: Escala) => void
-  selectOption: (nome: string, opcao: OpcaoMultipla) => void
+  selectOption: (telefone: string, nome: string, opcao: OpcaoMultipla) => void
   goPresencaExtra: () => void
   confirmPresencaExtra: (telefone: string, form: PresencaExtraForm) => void
   changeNumber: () => void
@@ -182,10 +182,11 @@ export function useCheckinFlow(): FlowApi {
   )
 
   // T6 · seleção de uma escala (US-07): navega direto ao estado da linha
-  // escolhida, sem nova chamada (a opção já carrega seu `estado`).
-  const selectOption = useCallback((nome: string, opcao: OpcaoMultipla) => {
+  // escolhida, sem nova chamada (a opção já carrega seu `estado`). O telefone
+  // vem do resolve (a opção não o carrega) para montar a chave única.
+  const selectOption = useCallback((telefone: string, nome: string, opcao: OpcaoMultipla) => {
     const escala: Escala = {
-      telefone: opcao.telefone,
+      telefone,
       data: opcao.data,
       area: opcao.area,
       turno: opcao.turno,
@@ -194,7 +195,10 @@ export function useCheckinFlow(): FlowApi {
     if (opcao.estado === 'IN_SERVICE') {
       setView({ kind: 'inService', data: { nome, escala, checkinAt: opcao.checkinAt ?? '' } })
     } else if (opcao.estado === 'DONE') {
-      setView({ kind: 'done', data: { nome, escala, checkinAt: opcao.checkinAt ?? '', checkoutAt: '' } })
+      setView({
+        kind: 'done',
+        data: { nome, escala, checkinAt: opcao.checkinAt ?? '', checkoutAt: opcao.checkoutAt ?? '' },
+      })
     } else {
       setView({ kind: 'canCheckin', data: { nome, escala } })
     }

@@ -24,7 +24,7 @@ export function MultipleScreen({ data, onSelect, onChangeNumber }: MultipleScree
       <div className="pt-2">
         <h2 className="text-h2 font-bold text-ink">Olá, {nome.split(' ')[0]}!</h2>
         <p className="mt-2 text-body text-muted">
-          Você está escalado em mais de uma área hoje. Selecione:
+          Você está em mais de uma escala hoje. Selecione:
         </p>
 
         <ul className="mt-6 space-y-3">

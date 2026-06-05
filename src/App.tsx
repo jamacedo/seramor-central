@@ -11,6 +11,7 @@ import { MessageScreen } from '@/screens/MessageScreen'
 import { SummaryCard } from '@/components/SummaryCard'
 import { AlertTriangle, Ban, CheckCircle, WifiOff } from '@/components/icons'
 import { timeOf } from '@/lib/date'
+import { COPY } from '@/lib/copy'
 
 export default function App() {
   const flow = useCheckinFlow()
@@ -62,6 +63,7 @@ export default function App() {
           data={view.data}
           oneTapSaved={flow.oneTap}
           onFinish={flow.finish}
+          onChangeNumber={flow.changeNumber}
         />
       )
 
@@ -70,7 +72,7 @@ export default function App() {
       return (
         <MultipleScreen
           data={view.data}
-          onSelect={flow.selectOption}
+          onSelect={(nome, opcao) => flow.selectOption(view.telefone, nome, opcao)}
           onChangeNumber={flow.changeNumber}
         />
       )
@@ -108,8 +110,9 @@ export default function App() {
               ]}
             />
           }
-          secondaryLabel="Sair / Usar outro número"
-          onSecondary={flow.changeNumber}
+          secondaryLabel="Fechar"
+          onSecondary={flow.finish}
+          onChangeNumber={flow.changeNumber}
         />
       )
     }
@@ -120,7 +123,7 @@ export default function App() {
         <MessageScreen
           icon={<Ban size={64} className="text-muted" />}
           title="Número não encontrado"
-          body={view.data.message}
+          body={COPY.notFound}
           primary={{ label: 'Tentar outro número', onClick: flow.changeNumber }}
         />
       )
@@ -132,8 +135,7 @@ export default function App() {
         <MessageScreen
           icon={<AlertTriangle size={64} className="text-warning" />}
           title={`Olá, ${view.data.nome.split(' ')[0]}!`}
-          // A saudação já vai no título; remove o "Olá, Nome!" do corpo.
-          body={view.data.message.replace(/^Olá,[^!]*!\s*/, '')}
+          body={COPY.notScheduled}
           primary={
             view.data.podeRegistrarForaDaEscala
               ? { label: 'Vou servir hoje mesmo assim', onClick: flow.goPresencaExtra }

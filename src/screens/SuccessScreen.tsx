@@ -12,18 +12,20 @@ type SuccessScreenProps =
       data: CheckinResult
       oneTapSaved: boolean
       onFinish: () => void
+      onChangeNumber?: () => void
     }
   | {
       variant: 'checkout'
       data: CheckoutResult
       oneTapSaved: boolean
       onFinish: () => void
+      onChangeNumber?: () => void
     }
 
 // T8 · Sucesso — variações check-in / check-out (US-04/05).
 // A US-10 reaproveita a variação "checkin" (é um check-in fora da escala).
 export function SuccessScreen(props: SuccessScreenProps) {
-  const { variant, data, oneTapSaved, onFinish } = props
+  const { variant, data, oneTapSaved, onFinish, onChangeNumber } = props
 
   const title = variant === 'checkin' ? 'Check-in confirmado!' : 'Check-out confirmado!'
 
@@ -52,11 +54,11 @@ export function SuccessScreen(props: SuccessScreenProps) {
 
   return (
     <Screen
-      header={<AppHeader />}
+      header={<AppHeader onChangeNumber={onChangeNumber} />}
       centerContent
       footer={
         <Button variant="ghost" onClick={onFinish}>
-          Finalizar
+          Fechar
         </Button>
       }
     >

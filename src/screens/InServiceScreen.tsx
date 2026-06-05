@@ -31,14 +31,14 @@ export function InServiceScreen({ data, onConfirm, onChangeNumber }: InServiceSc
         <div className="mx-auto mt-6 w-full max-w-[22rem]">
           <SummaryCard
             rows={[
-              { icon: '📍', label: <span>Ministério <strong>{escala.area}</strong></span> },
+              { icon: '📍', label: <span>Área <strong>{escala.area}</strong></span> },
               { icon: '⏱', label: <span>Entrada às <strong>{hora}</strong></span> },
             ]}
           />
         </div>
 
         <p className="mx-auto mt-6 max-w-[20rem] text-center text-body text-ink">
-          Você entrou às {hora}. Confirmar saída do Ministério{' '}
+          Você entrou às {hora}. Confirmar saída da área{' '}
           <span className="font-bold">{escala.area}</span>?
         </p>
       </div>

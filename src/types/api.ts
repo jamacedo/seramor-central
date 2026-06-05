@@ -65,7 +65,8 @@ export interface ApiEnvelope<T = unknown> {
 // ── Payloads de /resolve por estado ────────────────────────────────
 
 export interface ResolveNotFound {
-  message: string
+  // Cópia é dona do front (lib/copy.ts); o backend não precisa enviar.
+  message?: string
 }
 
 export interface ResolveNotScheduled {
@@ -73,7 +74,7 @@ export interface ResolveNotScheduled {
   podeRegistrarForaDaEscala: boolean
   areaSugerida?: Area
   funcaoSugerida?: string
-  message: string
+  message?: string
 }
 
 export interface ResolveCanCheckin {
@@ -94,9 +95,16 @@ export interface ResolveDone {
   checkoutAt: string
 }
 
-export interface OpcaoMultipla extends Escala {
+// Opção da tela MULTIPLE. NÃO carrega telefone — o backend não o envia por
+// opção (Contrato §4.1); o front usa o telefone já buscado para montar a chave.
+export interface OpcaoMultipla {
+  data: string
+  area: Area
+  turno: Turno
+  funcao: string
   estado: CheckinState
   checkinAt?: string
+  checkoutAt?: string // presente quando a opção já está DONE
 }
 
 export interface ResolveMultiple {

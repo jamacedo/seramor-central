@@ -10,9 +10,10 @@ do dia e oferece **check-in ou check-out** conforme o estado.
 
 ## Stack
 
-- **React 18 + Vite** — SPA leve, hospedável estaticamente ou via HTML Service.
+- **React 18 + Vite** — SPA leve, **instalável como PWA** (hospedagem estática).
 - **TypeScript** estrito.
 - **Tailwind CSS** com os tokens de marca aprovados (`tailwind.config.ts`).
+- **vite-plugin-pwa** (Workbox) — service worker + manifest.
 - **Sem dependências de runtime além do React** — ícones e helpers inline.
 
 ## Rodando
@@ -57,6 +58,28 @@ cp .env.example .env
 
 O client envia `POST` com `text/plain` (evita preflight CORS no Apps Script) e
 faz **retry automático 1×** em timeout > 5s (Especificação §9).
+
+## PWA
+
+App instalável ("Adicionar à tela de início"). Requer **hospedagem estática no
+root do domínio com HTTPS** (ex.: Cloudflare Pages) — não funciona via Apps
+Script HTML Service (roda em iframe, sem escopo de service worker).
+
+- **Service worker** (`vite-plugin-pwa`, `registerType: autoUpdate`): precacheia
+  só o *app shell*; nova versão entra no próximo carregamento completo.
+- **API nunca é cacheada** — `script.google.com` usa `NetworkOnly`. O estado é
+  sempre recalculado no servidor; sem rede, cai na tela de Offline.
+- O SW só ativa na **build** (`npm run build && npm run preview`), não em `dev`.
+
+### Ícones
+
+Em `public/` (gerados de `src/assets/logo-ser-amor.png`). A logo-fonte é 196px,
+então os ícones ficam levemente suaves. Ao receber uma logo ≥512px ou SVG,
+substitua o arquivo e regenere:
+
+```bash
+node scripts/generate-icons.mjs
+```
 
 ## Estrutura
 

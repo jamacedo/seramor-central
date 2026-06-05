@@ -8,6 +8,9 @@ dist
 dist-ssr
 .vite
 
+# PWA (vite-plugin-pwa em modo dev)
+dev-dist
+
 # TypeScript (build incremental)
 *.tsbuildinfo
 

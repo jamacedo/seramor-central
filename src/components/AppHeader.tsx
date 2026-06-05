@@ -27,7 +27,7 @@ export function AppHeader({ onBack, onChangeNumber }: AppHeaderProps) {
             onClick={onChangeNumber}
             className="ml-auto text-label text-primary"
           >
-            Usar outro ›
+            Trocar número ›
           </button>
         )}
       </div>
