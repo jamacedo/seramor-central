@@ -23,8 +23,10 @@ export default defineConfig({
         description: 'Check-in de voluntários da Igreja Ser Amor.',
         lang: 'pt-BR',
         dir: 'ltr',
-        start_url: '/',
-        scope: '/',
+        // O PWA instalável é o painel /admin: abre direto nele e a janela do
+        // app fica restrita a /admin (sair desse escopo abre no navegador).
+        start_url: '/admin',
+        scope: '/admin',
         display: 'standalone',
         orientation: 'portrait',
         background_color: '#FFFFFF',

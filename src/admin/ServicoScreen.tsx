@@ -183,7 +183,7 @@ export function ServicoScreen({
       )}
 
       <label className="text-label font-semibold text-ink" htmlFor="busca">
-        Buscar escalado de hoje
+        Voluntários escalados
       </label>
       <input
         id="busca"

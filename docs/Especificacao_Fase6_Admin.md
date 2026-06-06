@@ -183,7 +183,7 @@ sempre encaminha para Serviço, evitando duplicar a lista de pessoas em duas tel
 ┌──────────────────────────────┐     ┌──────────────────────────────┐
 │  Base Voluntários       ⟳12:05│     │  ◂ Voltar                     │
 │ ───────────────────────────── │     │ ───────────────────────────── │
-│  Buscar escalado de hoje      │     │  Pablo Alcântara              │  H2
+│  Voluntários escalados        │     │  Pablo Alcântara              │  H2
 │  [ 🔍 pablo________________ ] │     │  Louvor · Manhã · Vocal       │
 │  [ Área ▾ ]  [ Turno ▾ ]      │     │  📞 (11) 9 9999-8888       ✎  │  ✎ → F6-C
 │ ───────────────────────────── │     │ ───────────────────────────── │
@@ -459,6 +459,8 @@ telefone; em seguida atualiza a linha em **`Base Voluntarios`**. `gravado` indic
 - **Painel de ação** redesenhado no **estilo do check-in do voluntário**: dados da
   pessoa **centralizados** + **botão (Confirmar Check-in/Check-out) fixo na base** +
   link **✎ Atualizar cadastro** (abre F6-C para a pessoa).
+- **Microcopy:** rótulo do campo de busca é **"Voluntários escalados"** (era "Buscar
+  escalado de hoje").
 
 ### 8.5 Cadastro/telefone (F6-C)
 Sem mudanças de regra: grava **origem + compilada**, com sucesso/erro
