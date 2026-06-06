@@ -21,7 +21,6 @@ interface Person {
 }
 
 interface CadastroScreenProps {
-  identity: string
   operador: string
   target: CadastroTarget
   onClose: () => void
@@ -34,13 +33,7 @@ const ERROS: Record<string, string> = {
   ORIGIN_NOT_FOUND: 'Não foi possível atualizar na planilha da área.',
 }
 
-export function CadastroScreen({
-  identity,
-  operador,
-  target,
-  onClose,
-  onLogout,
-}: CadastroScreenProps) {
+export function CadastroScreen({ operador, target, onClose, onLogout }: CadastroScreenProps) {
   const initialPerson: Person | null = target.nome && target.area
     ? { nome: target.nome, area: target.area, telefone: target.telefone }
     : null
@@ -95,7 +88,7 @@ export function CadastroScreen({
   // ── Sucesso ──────────────────────────────────────────────────────
   if (sucesso) {
     return (
-      <AdminShell identity={identity} onBack={onClose} onLogout={onLogout}>
+      <AdminShell onBack={onClose} onLogout={onLogout}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
           <CheckCircle size={72} className="text-success" />
           <h2 className="text-h2 text-ink">Telefone atualizado!</h2>
@@ -113,7 +106,7 @@ export function CadastroScreen({
   // ── Busca (fallback, sem pessoa definida) ────────────────────────
   if (!person) {
     return (
-      <AdminShell identity={identity} onBack={onClose} onLogout={onLogout}>
+      <AdminShell onBack={onClose} onLogout={onLogout}>
         <label className="text-label font-semibold text-ink" htmlFor="busca-base">
           Buscar voluntário
         </label>
@@ -152,7 +145,7 @@ export function CadastroScreen({
 
   // ── Edição ───────────────────────────────────────────────────────
   return (
-    <AdminShell identity={identity} onBack={onClose} onLogout={onLogout}>
+    <AdminShell onBack={onClose} onLogout={onLogout}>
       <div>
         <h2 className="text-h2 text-ink">{person.nome}</h2>
         <p className="text-label text-muted">{person.area}</p>

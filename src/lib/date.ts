@@ -16,6 +16,34 @@ export function todayLong(date = new Date()): string {
   return s.replace(/^./, (c) => c.toUpperCase()).replace(/ de (\w)/, (_, c) => ` de ${c.toUpperCase()}`)
 }
 
+/** Data de hoje em America/Sao_Paulo no formato ISO `YYYY-MM-DD` (p/ `<input type=date>`). */
+export function todayISO(date = new Date()): string {
+  // en-CA formata como YYYY-MM-DD.
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date)
+}
+
+/** `YYYY-MM-DD` → `DD/MM/YYYY` (formato do contrato). */
+export function isoToBR(iso: string): string {
+  const [y, m, d] = iso.split('-')
+  return `${d}/${m}/${y}`
+}
+
+/** `YYYY-MM-DD` → "Domingo, 13 de Junho" (data de calendário, sem shift de fuso). */
+export function longDateFromISO(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  const s = new Intl.DateTimeFormat('pt-BR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(new Date(y, m - 1, d))
+  return s.replace(/^./, (c) => c.toUpperCase()).replace(/ de (\w)/, (_, c) => ` de ${c.toUpperCase()}`)
+}
+
 /** Extrai "HH:MM" de um carimbo "DD/MM/YYYY HH:MM". */
 export function timeOf(stamp: string | undefined): string {
   if (!stamp) return ''

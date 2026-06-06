@@ -94,6 +94,8 @@ export interface AdminDashboardRequest {
   action: 'adminDashboard'
   operador: string
   turno?: Turno
+  /** Data de referência DD/MM/YYYY. Omitido = hoje (servidor). */
+  data?: string
 }
 
 export interface AdminSearchRequest {
@@ -102,6 +104,8 @@ export interface AdminSearchRequest {
   nome: string
   area?: Area
   turno?: Turno
+  /** Data de referência DD/MM/YYYY. Omitido = hoje (servidor). */
+  data?: string
 }
 
 export interface AdminCheckinRequest {

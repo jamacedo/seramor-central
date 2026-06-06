@@ -1,6 +1,6 @@
 # Especificação + Wireframes — Fase 6 (Visão Central / Admin)
 ## Sistema de Check-in de Voluntários · Igreja Ser Amor
-**Versão:** 0.2 (enxuta + addendum de implementação) | **Escopo:** Painel `/admin` — 3 frentes | **Base:** PRD v1.3, Especificação Fases Futuras §3, Contrato v1.2, Addendum Jun/2026 | **Data:** Jun/2026
+**Versão:** 0.3 (enxuta + addendum de implementação) | **Escopo:** Painel `/admin` — 3 frentes | **Base:** PRD v1.3, Especificação Fases Futuras §3, Contrato v1.2, Addendum Jun/2026 | **Data:** Jun/2026
 
 > Versão **enxuta e acionável** da Fase 6. Cobre só o que foi priorizado:
 > **(1) Visão global**, **(2) Check-in/out manual por nome** e **(3) Atualização de telefone**.
@@ -287,9 +287,11 @@ sempre encaminha para Serviço, evitando duplicar a lista de pessoas em duas tel
 ### 5.1 `POST adminDashboard` — Visão global (US-A2)
 **Request**
 ```json
-{ "action": "adminDashboard", "operador": "admin@seramor.com.br", "turno": "Manhã" }
+{ "action": "adminDashboard", "operador": "admin@seramor.com.br", "turno": "Manhã", "data": "08/06/2026" }
 ```
 > `turno` opcional (`Manhã` | `Noite` | omitido = todos).
+> `data` opcional **`DD/MM/YYYY`** — data de referência escolhida no header (seletor de
+> calendário, §8.7). **Omitido = hoje** (servidor). Permite ao admin revisar outras datas.
 
 **Sucesso**
 ```json
@@ -305,15 +307,16 @@ sempre encaminha para Serviço, evitando duplicar a lista de pessoas em duas tel
   "error": null }
 ```
 
-### 5.2 `POST adminSearch` — Busca de escalados de hoje (US-A1)
+### 5.2 `POST adminSearch` — Busca de escalados (US-A1)
 **Request**
 ```json
 { "action": "adminSearch", "operador": "admin@seramor.com.br",
-  "nome": "pablo", "area": "Louvor", "turno": "Manhã" }
+  "nome": "pablo", "area": "Louvor", "turno": "Manhã", "data": "08/06/2026" }
 ```
-> `nome` obrigatório (mín. 2 chars, sem acento/caixa); `area`/`turno` opcionais (filtros).
+> `nome` **opcional** — `≥2 chars` filtra por nome; **vazio lista todos** do filtro (ver §8.4).
+> `area`/`turno` opcionais (filtros). `data` opcional `DD/MM/YYYY`, **omitido = hoje** (§8.7).
 
-**Sucesso** — lista de linhas da escala de hoje que casam:
+**Sucesso** — lista de linhas da escala da data de referência que casam:
 ```json
 { "ok": true,
   "data": { "itens": [
@@ -435,6 +438,8 @@ telefone; em seguida atualiza a linha em **`Base Voluntarios`**. `gravado` indic
 ### 8.3 Visão (F6-A)
 > Supera §4 F6-A.
 
+- **Saudação no topo do conteúdo:** *"Olá `<e-mail do operador>`,"* (texto um pouco
+  maior). É onde o e-mail aparece — **não** mais no header (§8.7). Só na Visão.
 - Filtro de **Turno** com rótulo **"Todos"** (não "Todas"); **valor inicial pelo
   período do dia** (`inferTurno`: Manhã antes das 14h, senão Noite).
 - **Ordenação das áreas** virou **controle interativo** (não mais rótulo fixo):
@@ -462,17 +467,38 @@ Sem mudanças de regra: grava **origem + compilada**, com sucesso/erro
 
 ### 8.6 Estrutura de arquivos
 ```
-src/admin/        AdminApp · AdminShell · VisaoScreen · ServicoScreen · CadastroScreen · ui
-src/api/          adminClient.ts · adminMock.ts
-src/types/        admin.ts
-src/lib/          zeroTrust.ts · adminEnv.ts
-src/main.tsx      roteamento /admin
-public/_redirects SPA fallback
+src/admin/    AdminApp · AdminShell · VisaoScreen · ServicoScreen · CadastroScreen · DatePicker · ui
+src/api/      adminClient.ts · adminMock.ts
+src/types/    admin.ts
+src/lib/      zeroTrust.ts · adminEnv.ts · date.ts (todayISO/isoToBR/longDateFromISO)
+src/index.css utilitário .pt-safe-gap (respiro do header)
+src/main.tsx  roteamento /admin
+wrangler.toml SPA fallback no Cloudflare Workers (ver docs/Deploy_Cloudflare.md)
 ```
+
+### 8.7 Header — data de referência (seletor de calendário)
+> Supera §4 (Shell) e §8.2 no header.
+
+- **Layout do header em 2 linhas:** linha 1 = logo + **"Base Voluntários"** (esq) · **Sair**
+  (ícone, dir); linha 2 = **data por extenso** (esq), **alinhada ao texto** "Base
+  Voluntários" (indenta pela largura do logo + gap). **O e-mail saiu do header** — virou a
+  saudação na Visão (§8.3); o header fica mais limpo.
+- **Respiro no topo:** utilitário `.pt-safe-gap` (`index.css`) = zona segura + 16px,
+  igual às margens laterais (`px-4`).
+- **Data de referência** exibida no padrão *"Domingo, 13 de Junho"* (`longDateFromISO`),
+  com um **ícone de calendário** ao lado que abre um **calendário modal centralizado**
+  (`src/admin/DatePicker.tsx` — sem dependências externas: navegação de mês, dia
+  selecionado/hoje destacados).
+- A data **default = hoje** (fuso SP) e é **estado do `AdminApp`**, compartilhada entre
+  **Visão e Serviço** (não reseta ao trocar de aba). Ao mudar, re-consulta o painel.
+- Vai às chamadas como **`data` (`DD/MM/YYYY`)** em `adminDashboard` e `adminSearch`
+  (§5.1/§5.2). `adminCheckin`/`adminCheckout` já usam a `data` da `escala` selecionada.
+- **Mock:** é **date-agnóstico** — sempre devolve a escala-semente e apenas **carimba** a
+  data pedida. O backend real **filtraria as linhas pela data**.
 
 ---
 
-*Especificação + Wireframes da Fase 6 (enxuta, v0.2 com addendum de implementação) —
+*Especificação + Wireframes da Fase 6 (enxuta, v0.3 com addendum de implementação) —
 painel `/admin` com Visão global, Check-in/out manual e Atualização de telefone.
 Reaproveita o backend Apps Script e o frontend do MVP; acesso por Cloudflare Zero
 Trust. Acompanha PRD v1.3, Especificação Fases Futuras e Contrato v1.2.*

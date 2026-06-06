@@ -29,15 +29,20 @@ async function adminPost<T>(req: AdminRequest): Promise<AdminEnvelope<T>> {
 
 export function adminDashboard(
   operador: string,
-  turno?: Turno,
+  opts: { turno?: Turno; data?: string } = {},
 ): Promise<AdminEnvelope<AdminDashboardResult>> {
-  return adminPost({ action: 'adminDashboard', operador, ...(turno ? { turno } : {}) })
+  return adminPost({
+    action: 'adminDashboard',
+    operador,
+    ...(opts.turno ? { turno: opts.turno } : {}),
+    ...(opts.data ? { data: opts.data } : {}),
+  })
 }
 
 export function adminSearch(
   operador: string,
   nome: string,
-  filters: { area?: Area; turno?: Turno } = {},
+  filters: { area?: Area; turno?: Turno; data?: string } = {},
 ): Promise<AdminEnvelope<AdminSearchResult>> {
   return adminPost({
     action: 'adminSearch',
@@ -45,6 +50,7 @@ export function adminSearch(
     nome,
     ...(filters.area ? { area: filters.area } : {}),
     ...(filters.turno ? { turno: filters.turno } : {}),
+    ...(filters.data ? { data: filters.data } : {}),
   })
 }
 

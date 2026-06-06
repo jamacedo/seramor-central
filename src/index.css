@@ -40,4 +40,8 @@
   .pt-safe {
     padding-top: env(safe-area-inset-top, 0px);
   }
+  /* Zona segura superior + respiro de 16px (igual às margens laterais). */
+  .pt-safe-gap {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+  }
 }

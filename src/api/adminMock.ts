@@ -118,7 +118,9 @@ function emptyCounts(): StatusCounts {
   return { escalados: 0, pendentes: 0, emServico: 0, concluidos: 0, comparecimento: 0 }
 }
 
-function dashboard(turno?: Turno): AdminDashboardResult {
+// Nota: o mock é date-agnóstico (sempre devolve a escala-semente, "de hoje"); só
+// carimba a `data` pedida. O backend real filtraria as linhas pela data.
+function dashboard(turno?: Turno, data?: string): AdminDashboardResult {
   const rows = sheet.filter((r) => !turno || r.turno === turno)
   const byArea = new Map<Area, AreaStatus>()
   const resumo = emptyCounts()
@@ -149,11 +151,12 @@ function dashboard(turno?: Turno): AdminDashboardResult {
   const areas = [...byArea.values()].map((a) => ({ ...a, comparecimento: ratio(a) }))
   resumo.comparecimento = ratio(resumo)
 
-  return { data: today, resumo, areas }
+  return { data: data ?? today, resumo, areas }
 }
 
-function search(nome: string, area?: Area, turno?: Turno): AdminSearchItem[] {
+function search(nome: string, area?: Area, turno?: Turno, data?: string): AdminSearchItem[] {
   const q = deburr(nome)
+  const dataRef = data ?? today
   return sheet
     .filter((r) => (!area || r.area === area) && (!turno || r.turno === turno))
     // Sem nome (<2 chars) lista todos que batem nos filtros de área/turno.
@@ -161,7 +164,7 @@ function search(nome: string, area?: Area, turno?: Turno): AdminSearchItem[] {
     .map((r) => ({
       nome: r.nome,
       telefone: r.telefone,
-      escala: { telefone: r.telefone, data: today, area: r.area, turno: r.turno, funcao: r.funcao },
+      escala: { telefone: r.telefone, data: dataRef, area: r.area, turno: r.turno, funcao: r.funcao },
       estado: estadoOf(r),
       ...(r.checkinAt ? { checkinAt: r.checkinAt } : {}),
       ...(r.checkoutAt ? { checkoutAt: r.checkoutAt } : {}),
@@ -181,10 +184,10 @@ function audit(row: Row, operador: string): void {
 export function adminMock(req: AdminRequest): AdminEnvelope {
   switch (req.action) {
     case 'adminDashboard':
-      return ok(dashboard(req.turno))
+      return ok(dashboard(req.turno, req.data))
 
     case 'adminSearch':
-      return ok({ itens: search(req.nome, req.area, req.turno) })
+      return ok({ itens: search(req.nome, req.area, req.turno, req.data) })
 
     case 'adminCheckin': {
       const row = findRow(req.telefone, req.area, req.turno)

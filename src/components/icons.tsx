@@ -92,6 +92,17 @@ export function UserCheck({ size = 24, className }: IconProps) {
   )
 }
 
+/** Calendário — trocar a data de referência do painel. */
+export function Calendar({ size = 24, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+      <rect x="3.5" y="5" width="17" height="15" rx="2.5" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M3.5 9.5h17" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8 3.5v3M16 3.5v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 /** Sair — logout (Zero Trust). */
 export function LogOut({ size = 24, className }: IconProps) {
   return (

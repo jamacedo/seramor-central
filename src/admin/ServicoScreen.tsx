@@ -8,7 +8,7 @@ import { adminCheckin, adminCheckout, adminSearch } from '@/api/adminClient'
 import type { AdminPersonState, AdminSearchItem, CadastroTarget } from '@/types/admin'
 import { AREAS, type Area, type Turno } from '@/types/api'
 import { Button } from '@/components/Button'
-import { inferTurno, timeOf } from '@/lib/date'
+import { inferTurno, isoToBR, timeOf } from '@/lib/date'
 import { maskPhone } from '@/lib/phone'
 import { AdminShell } from './AdminShell'
 import { StatusBadge, type AdminTab } from './ui'
@@ -26,11 +26,13 @@ const SORT_LABEL: Record<ServicoSort, string> = {
 const STATUS_RANK: Record<AdminPersonState, number> = { CAN_CHECKIN: 0, IN_SERVICE: 1, DONE: 2 }
 
 interface ServicoScreenProps {
-  identity: string
   operador: string
   tab: AdminTab
   onTab: (t: AdminTab) => void
   onLogout: () => void
+  /** Data de referência (ISO) + handler de troca, exibidos no header. */
+  dateISO: string
+  onDateChange: (iso: string) => void
   /** Pré-filtros quando aberto a partir do Dashboard (F6-A). */
   initialArea?: Area
   initialTurno?: 'Todos' | Turno
@@ -38,11 +40,12 @@ interface ServicoScreenProps {
 }
 
 export function ServicoScreen({
-  identity,
   operador,
   tab,
   onTab,
   onLogout,
+  dateISO,
+  onDateChange,
   initialArea,
   initialTurno,
   onOpenCadastro,
@@ -65,6 +68,7 @@ export function ServicoScreen({
     const filters = {
       area: area === 'Todas' ? undefined : area,
       turno: turno === 'Todos' ? undefined : turno,
+      data: isoToBR(dateISO),
     }
     const id = ++reqId.current
     setLoading(true)
@@ -77,7 +81,7 @@ export function ServicoScreen({
       }
     }, DEBOUNCE_MS)
     return () => clearTimeout(t)
-  }, [operador, query, area, turno, selected])
+  }, [operador, query, area, turno, dateISO, selected])
 
   async function act(item: AdminSearchItem) {
     setActing(true)
@@ -110,7 +114,7 @@ export function ServicoScreen({
   if (selected) {
     const s = selected
     return (
-      <AdminShell identity={identity} onBack={() => setSelected(null)} onLogout={onLogout}>
+      <AdminShell onBack={() => setSelected(null)} onLogout={onLogout}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
           <div>
             <h2 className="text-h2 text-ink">{s.nome}</h2>
@@ -167,7 +171,13 @@ export function ServicoScreen({
   )
 
   return (
-    <AdminShell identity={identity} tab={tab} onTab={onTab} onLogout={onLogout}>
+    <AdminShell
+      tab={tab}
+      onTab={onTab}
+      onLogout={onLogout}
+      dateISO={dateISO}
+      onDateChange={onDateChange}
+    >
       {toast && (
         <div className="rounded-input bg-success/10 px-3 py-2 text-helper text-success">{toast}</div>
       )}

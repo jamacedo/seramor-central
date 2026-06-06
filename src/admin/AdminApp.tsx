@@ -2,6 +2,7 @@
 // Trust), controla as abas (Visão/Serviço) e o overlay de Cadastro (F6-C).
 import { useEffect, useState } from 'react'
 import { getIdentity, logout } from '@/lib/zeroTrust'
+import { todayISO } from '@/lib/date'
 import type { CadastroTarget } from '@/types/admin'
 import type { Area, Turno } from '@/types/api'
 import { VisaoScreen } from './VisaoScreen'
@@ -14,6 +15,7 @@ export default function AdminApp() {
   const [tab, setTab] = useState<AdminTab>('visao')
   const [servicoArea, setServicoArea] = useState<Area | undefined>()
   const [servicoTurno, setServicoTurno] = useState<'Todos' | Turno | undefined>()
+  const [dateISO, setDateISO] = useState<string>(() => todayISO())
   const [cadastro, setCadastro] = useState<CadastroTarget | null>(null)
 
   useEffect(() => {
@@ -42,7 +44,6 @@ export default function AdminApp() {
   if (cadastro) {
     return (
       <CadastroScreen
-        identity={operador}
         operador={operador}
         target={cadastro}
         onClose={() => setCadastro(null)}
@@ -54,11 +55,12 @@ export default function AdminApp() {
   if (tab === 'visao') {
     return (
       <VisaoScreen
-        identity={operador}
         operador={operador}
         tab={tab}
         onTab={handleTab}
         onLogout={logout}
+        dateISO={dateISO}
+        onDateChange={setDateISO}
         onPickArea={(area, turno) => {
           setServicoArea(area)
           setServicoTurno(turno)
@@ -70,11 +72,12 @@ export default function AdminApp() {
 
   return (
     <ServicoScreen
-      identity={operador}
       operador={operador}
       tab={tab}
       onTab={handleTab}
       onLogout={logout}
+      dateISO={dateISO}
+      onDateChange={setDateISO}
       initialArea={servicoArea}
       initialTurno={servicoTurno}
       onOpenCadastro={(target) => setCadastro(target)}

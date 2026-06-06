@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { adminDashboard } from '@/api/adminClient'
 import type { AdminDashboardResult } from '@/types/admin'
 import type { Area, Turno } from '@/types/api'
-import { inferTurno } from '@/lib/date'
+import { inferTurno, isoToBR } from '@/lib/date'
 import { AdminShell } from './AdminShell'
 import { ProgressBar, pct, type AdminTab } from './ui'
 
@@ -20,16 +20,26 @@ const SORT_LABEL: Record<SortMode, string> = {
 }
 
 interface VisaoScreenProps {
-  identity: string
   operador: string
   tab: AdminTab
   onTab: (t: AdminTab) => void
   onLogout: () => void
+  /** Data de referência (ISO) + handler de troca, exibidos no header. */
+  dateISO: string
+  onDateChange: (iso: string) => void
   /** Abre Serviço filtrado pela área, carregando o turno atual do Dashboard. */
   onPickArea: (area: Area, turno: 'Todos' | Turno) => void
 }
 
-export function VisaoScreen({ identity, operador, tab, onTab, onLogout, onPickArea }: VisaoScreenProps) {
+export function VisaoScreen({
+  operador,
+  tab,
+  onTab,
+  onLogout,
+  dateISO,
+  onDateChange,
+  onPickArea,
+}: VisaoScreenProps) {
   // Filtro inicial conforme o período do dia (Manhã/Noite).
   const [turno, setTurno] = useState<'Todos' | Turno>(() => inferTurno())
   const [sort, setSort] = useState<SortMode>('pctAsc')
@@ -39,14 +49,17 @@ export function VisaoScreen({ identity, operador, tab, onTab, onLogout, onPickAr
   const load = useCallback(async () => {
     setRefreshing(true)
     try {
-      const env = await adminDashboard(operador, turno === 'Todos' ? undefined : turno)
+      const env = await adminDashboard(operador, {
+        turno: turno === 'Todos' ? undefined : turno,
+        data: isoToBR(dateISO),
+      })
       if (env.ok && env.data) setResult(env.data)
     } catch {
       // mantém o último resultado
     } finally {
       setRefreshing(false)
     }
-  }, [operador, turno])
+  }, [operador, turno, dateISO])
 
   useEffect(() => {
     let active = true
@@ -72,7 +85,16 @@ export function VisaoScreen({ identity, operador, tab, onTab, onLogout, onPickAr
     : []
 
   return (
-    <AdminShell identity={identity} tab={tab} onTab={onTab} onLogout={onLogout} refreshing={refreshing}>
+    <AdminShell
+      tab={tab}
+      onTab={onTab}
+      onLogout={onLogout}
+      refreshing={refreshing}
+      dateISO={dateISO}
+      onDateChange={onDateChange}
+    >
+      <p className="text-lg font-semibold text-ink">Olá {operador},</p>
+
       <div className="flex items-center gap-2">
         <span className="text-label font-semibold text-ink">Turno</span>
         <select
