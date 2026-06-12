@@ -158,14 +158,16 @@ function search(nome: string, area?: Area, turno?: Turno, data?: string): AdminS
   const q = deburr(nome)
   const dataRef = data ?? today
   return sheet
-    .filter((r) => (!area || r.area === area) && (!turno || r.turno === turno))
+    .map((r, i) => ({ r, i })) // i = "linha" → vira o `ref` (chave estável)
+    .filter(({ r }) => (!area || r.area === area) && (!turno || r.turno === turno))
     // Sem nome (<2 chars) lista todos que batem nos filtros de área/turno.
-    .filter((r) => (q.length >= 2 ? deburr(r.nome).includes(q) : true))
-    .map((r) => ({
+    .filter(({ r }) => (q.length >= 2 ? deburr(r.nome).includes(q) : true))
+    .map(({ r, i }) => ({
       nome: r.nome,
       telefone: r.telefone,
       escala: { telefone: r.telefone, data: dataRef, area: r.area, turno: r.turno, funcao: r.funcao },
       estado: estadoOf(r),
+      ref: i,
       ...(r.checkinAt ? { checkinAt: r.checkinAt } : {}),
       ...(r.checkoutAt ? { checkoutAt: r.checkoutAt } : {}),
     }))
@@ -173,6 +175,12 @@ function search(nome: string, area?: Area, turno?: Turno, data?: string): AdminS
 
 function findRow(telefone: string, area: Area, turno: Turno): Row | undefined {
   return sheet.find((r) => r.telefone === telefone && r.area === area && r.turno === turno)
+}
+
+/** Locator: prioriza `ref` (índice da linha) — funciona p/ quem está sem telefone. */
+function locate(req: { ref?: number; telefone: string; area: Area; turno: Turno }): Row | undefined {
+  if (req.ref != null) return sheet[req.ref]
+  return findRow(req.telefone, req.area, req.turno)
 }
 
 function audit(row: Row, operador: string): void {
@@ -190,9 +198,12 @@ export function adminMock(req: AdminRequest): AdminEnvelope {
       return ok({ itens: search(req.nome, req.area, req.turno, req.data) })
 
     case 'adminCheckin': {
-      const row = findRow(req.telefone, req.area, req.turno)
+      const row = locate(req)
       if (!row) return fail('ROW_NOT_FOUND')
       if (row.In) return fail('ALREADY_CHECKED_IN', row.checkinAt ?? '')
+      // Telefone opcional: grava na escala só se a linha estiver sem telefone.
+      const telNovo = (req.telefoneNovo ?? '').replace(/\D/g, '')
+      if (telNovo.length === 11 && !row.telefone) row.telefone = telNovo
       row.In = true
       row.checkinAt = nowStamp()
       audit(row, req.operador)
@@ -200,7 +211,7 @@ export function adminMock(req: AdminRequest): AdminEnvelope {
     }
 
     case 'adminCheckout': {
-      const row = findRow(req.telefone, req.area, req.turno)
+      const row = locate(req)
       if (!row) return fail('ROW_NOT_FOUND')
       if (!row.In) return fail('NOT_CHECKED_IN')
       if (row.Out) return fail('ALREADY_CHECKED_OUT')

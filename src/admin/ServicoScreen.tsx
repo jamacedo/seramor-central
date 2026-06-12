@@ -4,13 +4,13 @@
 // filtrado. Ao selecionar uma pessoa: dados centralizados + botão fixo na base
 // (estilo do check-in do voluntário) + atalho "Atualizar cadastro" (F6-C).
 // Check-in/out faz patch local da pessoa (onPatchPerson), sem buscar tudo.
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { adminCheckin, adminCheckout } from '@/api/adminClient'
 import type { AdminPersonState, AdminSearchItem, CadastroTarget } from '@/types/admin'
 import { AREAS, type Area, type Turno } from '@/types/api'
 import { Button } from '@/components/Button'
 import { inferTurno, timeOf } from '@/lib/date'
-import { maskPhone } from '@/lib/phone'
+import { isValidPhone, maskPhone, normalizePhone } from '@/lib/phone'
 import { deburr } from '@/lib/text'
 import { AdminShell } from './AdminShell'
 import { personKey } from './useDayData'
@@ -76,6 +76,13 @@ export function ServicoScreen({
   const [sort, setSort] = useState<ServicoSort>('status')
   const [acting, setActing] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  // Telefone opcional digitado no painel (para quem está sem telefone).
+  const [novoTel, setNovoTel] = useState('')
+
+  // Limpa o telefone digitado ao trocar de pessoa.
+  useEffect(() => {
+    setNovoTel('')
+  }, [selected?.ref, selected?.telefone])
 
   const loading = items === null
 
@@ -94,17 +101,29 @@ export function ServicoScreen({
   async function act(item: AdminSearchItem) {
     setActing(true)
     try {
+      // Localiza pela linha (`ref`) — funciona mesmo sem telefone; `nome` valida.
       const e = {
         telefone: item.escala.telefone,
         data: item.escala.data,
         area: item.escala.area,
         turno: item.escala.turno,
+        ref: item.ref,
+        nome: item.nome,
       }
       if (item.estado === 'CAN_CHECKIN') {
-        const env = await adminCheckin(operador, e)
+        // Telefone opcional: só envia se a pessoa está sem telefone e digitou um válido.
+        const telOpcional = !item.telefone && isValidPhone(novoTel) ? normalizePhone(novoTel) : undefined
+        const env = await adminCheckin(operador, { ...e, telefoneNovo: telOpcional })
         if (env.ok && env.data) {
-          // Patch local: só esta pessoa muda de estado (sem refetch do dia).
-          onPatchPerson(personKey(item), { ...item, estado: 'IN_SERVICE', checkinAt: env.data.checkinAt })
+          // Patch local: só esta pessoa muda (e ganha o telefone, se informado).
+          const tel = telOpcional ?? item.telefone
+          onPatchPerson(personKey(item), {
+            ...item,
+            estado: 'IN_SERVICE',
+            checkinAt: env.data.checkinAt,
+            telefone: tel,
+            escala: { ...item.escala, telefone: tel },
+          })
           setToast(`Check-in de ${item.nome.split(' ')[0]} registrado por você`)
           onBackPerson()
         } else {
@@ -157,6 +176,24 @@ export function ServicoScreen({
           )}
 
           <p className="text-label text-ink">📞 {maskPhone(s.telefone) || '—'}</p>
+
+          {/* Pessoa SEM telefone que pode fazer check-in: campo opcional para
+              registrar o número junto da entrada (grava na escala). */}
+          {!s.telefone && s.estado === 'CAN_CHECKIN' && (
+            <div className="w-full max-w-xs">
+              <label className="text-helper text-muted" htmlFor="tel-opcional">
+                Telefone (opcional)
+              </label>
+              <input
+                id="tel-opcional"
+                inputMode="numeric"
+                value={maskPhone(novoTel)}
+                onChange={(e) => setNovoTel(e.target.value)}
+                placeholder="(11) 99999-8888"
+                className="mt-1 w-full rounded-input border border-black/10 px-3 py-2.5 text-center text-label"
+              />
+            </div>
+          )}
         </div>
 
         {/* Ações fixas na base (estilo check-in do voluntário) */}

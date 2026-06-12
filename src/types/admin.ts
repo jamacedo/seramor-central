@@ -52,6 +52,9 @@ export interface AdminSearchItem {
   estado: AdminPersonState
   checkinAt?: string
   checkoutAt?: string
+  /** Nº da linha na planilha Checkin Ser Amor — chave estável p/ check-in/out
+   *  mesmo sem telefone (linhas sem telefone não têm chave por telefone). */
+  ref?: number
 }
 
 export interface AdminSearchResult {
@@ -115,6 +118,12 @@ export interface AdminCheckinRequest {
   data: string
   area: Area
   turno: Turno
+  /** Linha-alvo na planilha (prioritária sobre telefone). */
+  ref?: number
+  /** Nome esperado da linha — validação contra deslocamento de linhas. */
+  nome?: string
+  /** Telefone opcional a gravar na escala (só se a linha estiver sem telefone). */
+  telefoneNovo?: string
 }
 
 export interface AdminCheckoutRequest {
@@ -124,6 +133,10 @@ export interface AdminCheckoutRequest {
   data: string
   area: Area
   turno: Turno
+  /** Linha-alvo na planilha (prioritária sobre telefone). */
+  ref?: number
+  /** Nome esperado da linha — validação contra deslocamento de linhas. */
+  nome?: string
 }
 
 export interface AdminUpdatePhoneRequest {

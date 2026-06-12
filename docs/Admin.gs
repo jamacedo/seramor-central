@@ -115,7 +115,8 @@ function adminSearch(body) {
         nome: r.nome,
         telefone: r.telefone,
         escala: { telefone: r.telefone, data: dateStr, area: r.area, turno: r.turno, funcao: r.funcao },
-        estado: rowState(r)
+        estado: rowState(r),
+        ref: r.sheetRow // chave estável p/ check-in/out mesmo sem telefone
       };
       if (r.in) item.checkinAt = fmtStamp(r.checkin);
       if (r.out) item.checkoutAt = fmtStamp(r.checkout);
@@ -125,16 +126,42 @@ function adminSearch(body) {
   return ok({ itens: itens });
 }
 
+/**
+ * Localiza a linha-alvo de uma ação. Prioriza `ref` (nº da linha — funciona p/
+ * quem está SEM telefone); valida área/turno (e nome, se enviado) contra
+ * deslocamento de linhas. Sem `ref`, cai na chave por telefone (findRow_).
+ */
+function locateRow_(body) {
+  if (body.ref) {
+    var c = ck_();
+    var rn = Number(body.ref);
+    if (rn < 2 || rn > c.lastRow) return null;
+    var v = c.sheet.getRange(rn, 1, 1, c.lastCol).getValues()[0];
+    var row = parseRow_(c.idx, v, rn);
+    if (String(row.area).trim() !== String(body.area).trim()) return null;
+    if (String(row.turno).trim() !== String(body.turno).trim()) return null;
+    if (body.nome && deburr_(row.nome) !== deburr_(body.nome)) return null;
+    return row;
+  }
+  return findRow_(normalizePhone(body.telefone), body.data, body.area, body.turno);
+}
+
 /** F6-B · Check-in manual (já-In ⇒ erro, diferente do MVP idempotente). */
 function adminCheckin(body) {
   var gate = requireAdmin_(body); if (gate) return gate;
 
-  var loc = findRow_(normalizePhone(body.telefone), body.data, body.area, body.turno);
+  var loc = locateRow_(body);
   if (!loc) return err('ROW_NOT_FOUND', 'Escala não encontrada.');
   if (loc.in === true) return err('ALREADY_CHECKED_IN', 'Voluntário já fez check-in.');
 
   var now = new Date();
   var c = ck_();
+  // Telefone opcional informado no check-in: grava na escala SÓ se a linha
+  // estiver sem telefone (não sobrescreve número existente — isso é cadastro).
+  var telNovo = normalizePhone(body.telefoneNovo);
+  if (telNovo.length === 11 && !normalizePhone(loc.telefone)) {
+    writeCell_(c, loc.sheetRow, CONFIG.COL.TELEFONE, telNovo);
+  }
   writeCell_(c, loc.sheetRow, CONFIG.COL.IN, true);
   writeCell_(c, loc.sheetRow, CONFIG.COL.CHECKIN, now);
   appendObs_(c, loc.sheetRow, auditTag_(body.operador, now));
@@ -146,7 +173,7 @@ function adminCheckin(body) {
 function adminCheckout(body) {
   var gate = requireAdmin_(body); if (gate) return gate;
 
-  var loc = findRow_(normalizePhone(body.telefone), body.data, body.area, body.turno);
+  var loc = locateRow_(body);
   if (!loc) return err('ROW_NOT_FOUND', 'Escala não encontrada.');
   if (loc.in !== true) return err('NOT_CHECKED_IN', 'Faça o check-in antes da saída.');
   if (loc.out === true) return err('ALREADY_CHECKED_OUT', 'Voluntário já fez check-out.');

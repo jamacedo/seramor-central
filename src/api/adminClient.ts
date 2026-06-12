@@ -58,14 +58,22 @@ export function adminSearch(
 
 export function adminCheckin(
   operador: string,
-  e: { telefone: string; data: string; area: Area; turno: Turno },
+  e: {
+    telefone: string
+    data: string
+    area: Area
+    turno: Turno
+    ref?: number
+    nome?: string
+    telefoneNovo?: string
+  },
 ): Promise<AdminEnvelope<AdminCheckinResult>> {
   return adminPost({ action: 'adminCheckin', operador, ...e })
 }
 
 export function adminCheckout(
   operador: string,
-  e: { telefone: string; data: string; area: Area; turno: Turno },
+  e: { telefone: string; data: string; area: Area; turno: Turno; ref?: number; nome?: string },
 ): Promise<AdminEnvelope<AdminCheckoutResult>> {
   return adminPost({ action: 'adminCheckout', operador, ...e })
 }

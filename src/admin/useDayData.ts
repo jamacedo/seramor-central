@@ -15,9 +15,13 @@ import { isoToBR } from '@/lib/date'
 
 const POLL_MS = 25000
 
-/** Chave única da linha de escala (telefone + área + turno). */
+/**
+ * Chave única da linha de escala. Prefere `ref` (nº da linha) — estável mesmo
+ * sem telefone e quando o telefone é editado; cai na tripla telefone+área+turno
+ * só se `ref` não vier. (Telefone vazio colide, daí o ref.)
+ */
 export function personKey(it: AdminSearchItem): string {
-  return `${it.telefone}-${it.escala.area}-${it.escala.turno}`
+  return it.ref != null ? `r${it.ref}` : `${it.telefone}-${it.escala.area}-${it.escala.turno}`
 }
 
 export interface DayData {
