@@ -156,11 +156,26 @@ function adminCheckin(body) {
 
   var now = new Date();
   var c = ck_();
-  // Telefone opcional informado no check-in: grava na escala SÓ se a linha
-  // estiver sem telefone (não sobrescreve número existente — isso é cadastro).
+  // Telefone opcional informado no check-in: grava SÓ se a linha estiver sem
+  // telefone (não sobrescreve número existente — correção é via cadastro).
+  // Propaga para os 3 lugares como o adminUpdatePhone: escala + origem (planilha
+  // da área) + Base Voluntarios. Origem/base são best-effort (não barram o
+  // check-in se o voluntário não estiver na base/origem).
   var telNovo = normalizePhone(body.telefoneNovo);
   if (telNovo.length === 11 && !normalizePhone(loc.telefone)) {
-    writeCell_(c, loc.sheetRow, CONFIG.COL.TELEFONE, telNovo);
+    var lock = LockService.getScriptLock();
+    lock.waitLock(10000);
+    try {
+      checkinUpdatePhone_(loc.area, loc.nome, telNovo);   // escala (linhas da pessoa)
+      originUpdatePhone_(loc.area, loc.nome, '', telNovo); // origem (área) — best-effort
+      var base = baseCtx_();
+      if (base) {
+        var fb = findBaseRow_(base, loc.area, loc.nome);
+        if (fb) base.sheet.getRange(fb.sheetRow, base.idx[CONFIG.COL_VOL.TELEFONE] + 1).setValue(telNovo);
+      }
+    } finally {
+      lock.releaseLock();
+    }
   }
   writeCell_(c, loc.sheetRow, CONFIG.COL.IN, true);
   writeCell_(c, loc.sheetRow, CONFIG.COL.CHECKIN, now);

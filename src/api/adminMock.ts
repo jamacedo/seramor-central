@@ -201,9 +201,14 @@ export function adminMock(req: AdminRequest): AdminEnvelope {
       const row = locate(req)
       if (!row) return fail('ROW_NOT_FOUND')
       if (row.In) return fail('ALREADY_CHECKED_IN', row.checkinAt ?? '')
-      // Telefone opcional: grava na escala só se a linha estiver sem telefone.
+      // Telefone opcional: grava só se a linha estiver sem telefone. Propaga p/
+      // escala (linhas da pessoa) + base (stand-in da planilha da área).
       const telNovo = (req.telefoneNovo ?? '').replace(/\D/g, '')
-      if (telNovo.length === 11 && !row.telefone) row.telefone = telNovo
+      if (telNovo.length === 11 && !row.telefone) {
+        for (const r of sheet) if (r.nome === row.nome && r.area === row.area) r.telefone = telNovo
+        const b = base.find((x) => x.area === row.area && x.nome === row.nome && x.ativo)
+        if (b) b.telefone = telNovo
+      }
       row.In = true
       row.checkinAt = nowStamp()
       audit(row, req.operador)
