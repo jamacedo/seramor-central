@@ -203,6 +203,10 @@ function adminUpdatePhone(body) {
     // 2) Compilada (Base Voluntarios): efeito imediato no /resolve.
     base.sheet.getRange(found.sheetRow, base.idx[CONFIG.COL_VOL.TELEFONE] + 1).setValue(telNovo);
 
+    // 3) Escala (Checkin Ser Amor): as linhas da pessoa (mesma área) carregam o
+    // telefone como chave; sem isto, o check-in/painel seguiriam com o número antigo.
+    checkinUpdatePhone_(area, nome, telNovo);
+
     return ok({
       nome: found.nome, area: area,
       telefoneAntigo: telAntigo, telefoneNovo: telNovo,
@@ -237,6 +241,28 @@ function appendObs_(c, sheetRow, tag) {
 
 function auditTag_(operador, when) {
   return '[manual: ' + (operador || '?') + ' em ' + fmtStamp(when) + ']';
+}
+
+// ====================== HELPERS — CHECKIN (escala) ======================
+
+/**
+ * Atualiza o `Telefone` das linhas da aba `Checkin Ser Amor` que pertencem ao
+ * voluntário (mesmo `Voluntário` + `Área`). Retorna quantas linhas mudaram.
+ * Lê só as colunas Voluntário/Área para decidir; escreve célula a célula.
+ */
+function checkinUpdatePhone_(area, nome, telNovo) {
+  var c = ck_();
+  var nomes = colValues_(c, CONFIG.COL.VOLUNTARIO);
+  var areas = colValues_(c, CONFIG.COL.AREA);
+  var alvo = deburr_(nome);
+  var n = 0;
+  for (var i = 0; i < nomes.length; i++) {
+    if (deburr_(nomes[i][0]) === alvo && String(areas[i][0]).trim() === area) {
+      writeCell_(c, i + 2, CONFIG.COL.TELEFONE, telNovo);
+      n++;
+    }
+  }
+  return n;
 }
 
 // ====================== HELPERS — BASE VOLUNTARIOS ======================

@@ -8,11 +8,15 @@ import { VisaoScreen } from './VisaoScreen'
 import { ServicoScreen } from './ServicoScreen'
 import { CadastroScreen } from './CadastroScreen'
 import { useAdminNav } from './useAdminNav'
+import { useDayData } from './useDayData'
 import type { AdminTab } from './ui'
 
 export default function AdminApp() {
   const [operador, setOperador] = useState<string>('')
   const nav = useAdminNav()
+  // Store único do dia: Visão e Serviço derivam tudo desta lista (busca 1×/data
+  // + polling). Compartilhar aqui mantém os dados ao trocar de aba.
+  const day = useDayData(operador, nav.dateISO)
 
   useEffect(() => {
     document.title = 'Base Voluntários · Admin'
@@ -40,7 +44,11 @@ export default function AdminApp() {
       <CadastroScreen
         operador={operador}
         target={current.target}
-        onClose={nav.back}
+        // Ao sair do Cadastro, recarrega o dia: telefone editado reflete na lista.
+        onClose={() => {
+          nav.back()
+          day.reload()
+        }}
         onLogout={logout}
       />
     )
@@ -55,6 +63,8 @@ export default function AdminApp() {
         onLogout={logout}
         dateISO={nav.dateISO}
         onDateChange={nav.setDateISO}
+        items={day.items}
+        refreshing={day.refreshing}
         onPickArea={(area, turno) => nav.replaceRoot({ kind: 'servico', area, turno })}
       />
     )
@@ -75,6 +85,9 @@ export default function AdminApp() {
       onDateChange={nav.setDateISO}
       initialArea={servico.area}
       initialTurno={servico.turno}
+      items={day.items}
+      refreshing={day.refreshing}
+      onPatchPerson={day.patchPerson}
       selected={selected}
       onSelect={(item) => nav.push({ kind: 'pessoa', item })}
       onBackPerson={nav.back}

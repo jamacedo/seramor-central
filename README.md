@@ -6,7 +6,7 @@ telefone**; o sistema infere área, função, turno e culto cruzando com a escal
 do dia e oferece **check-in ou check-out** conforme o estado.
 
 > Fase atual: **MVP (Fases 1–4)** — caminho feliz implementado.
-> **Fase 6 (painel `/admin`)** em andamento — front scaffolded contra mock
+> **Fase 6 (painel `/admin`)** no ar — front + backend Apps Script das 5 ações
 > (ver abaixo). Backend: Apps Script (Web App). Ver `docs/`.
 
 ## Stack
@@ -60,7 +60,7 @@ cp .env.example .env
 O client envia `POST` com `text/plain` (evita preflight CORS no Apps Script) e
 faz **retry automático 1×** em timeout > 5s (Especificação §9).
 
-## Painel `/admin` (Fase 6 — em andamento)
+## Painel `/admin` (Fase 6 — no ar)
 
 Painel administrativo na rota **`/admin`**, no mesmo bundle, protegido por
 **Cloudflare Zero Trust** (sem login no app). Spec: `docs/Especificacao_Fase6_Admin.md`.
@@ -73,11 +73,13 @@ compilada).
 npm run dev      # http://localhost:5173/admin
 ```
 
-> O **backend Apps Script dos endpoints de admin ainda não existe**. O flag
-> **`VITE_ADMIN_MOCK=1`** (no `.env`) faz o `/admin` rodar contra o mock
-> (`src/api/adminMock.ts`) mesmo com `VITE_API_URL` apontando pro backend real do
-> MVP. Remova/`0` quando o Apps Script implementar `adminDashboard` / `adminSearch`
-> / `adminCheckin` / `adminCheckout` / `adminUpdatePhone`.
+> **Backend admin no ar** (Jun/2026): as 5 ações vivem em `docs/Admin.gs` (reusa os
+> helpers do `Code_otimizado.gs`; roteadas por 5 `case` no `doPost`). Auth por
+> **token compartilhado**: o front envia `token` (`VITE_ADMIN_TOKEN`) validado contra
+> a Script Property `ADMIN_TOKEN`.
+> O flag **`VITE_ADMIN_MOCK`** (no `.env`) ainda existe para **dev**: `=1` roda o
+> `/admin` contra o mock (`src/api/adminMock.ts`) mesmo com `VITE_API_URL` setado.
+> Em produção fica **`0`** + `VITE_ADMIN_TOKEN` preenchido.
 
 > Em dev/mock a identidade do operador é fixa (`admin@seramor.com.br`). Em
 > produção, vem do `/cdn-cgi/access/get-identity` do Zero Trust; o **Sair** dispara

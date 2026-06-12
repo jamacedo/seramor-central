@@ -1,20 +1,22 @@
 // F6-B · Serviço — Check-in/out manual por nome — US-A1.
-// Busca entre os escalados de HOJE. Sem nome e com "Todas as áreas", lista
-// todos do turno corrente. Vindo do Dashboard (initialArea), abre filtrado.
-// Ao selecionar uma pessoa: dados centralizados + botão fixo na base
+// Filtra entre os escalados do dia (store compartilhado) por nome/área/turno NO
+// CLIENTE — não refaz busca ao filtrar. Vindo do Dashboard (initialArea), abre
+// filtrado. Ao selecionar uma pessoa: dados centralizados + botão fixo na base
 // (estilo do check-in do voluntário) + atalho "Atualizar cadastro" (F6-C).
-import { useEffect, useRef, useState } from 'react'
-import { adminCheckin, adminCheckout, adminSearch } from '@/api/adminClient'
+// Check-in/out faz patch local da pessoa (onPatchPerson), sem buscar tudo.
+import { useMemo, useState } from 'react'
+import { adminCheckin, adminCheckout } from '@/api/adminClient'
 import type { AdminPersonState, AdminSearchItem, CadastroTarget } from '@/types/admin'
 import { AREAS, type Area, type Turno } from '@/types/api'
 import { Button } from '@/components/Button'
-import { inferTurno, isoToBR, timeOf } from '@/lib/date'
+import { inferTurno, timeOf } from '@/lib/date'
 import { maskPhone } from '@/lib/phone'
+import { deburr } from '@/lib/text'
 import { AdminShell } from './AdminShell'
+import { personKey } from './useDayData'
 import { StatusBadge, type AdminTab } from './ui'
 
 const TURNOS: Array<'Todos' | Turno> = ['Todos', 'Manhã', 'Noite']
-const DEBOUNCE_MS = 300
 
 type ServicoSort = 'status' | 'nome' | 'area'
 const SORT_LABEL: Record<ServicoSort, string> = {
@@ -36,6 +38,11 @@ interface ServicoScreenProps {
   /** Pré-filtros quando aberto a partir do Dashboard (F6-A). */
   initialArea?: Area
   initialTurno?: 'Todos' | Turno
+  /** Escalados do dia (store compartilhado); `null` = ainda carregando. */
+  items: AdminSearchItem[] | null
+  refreshing: boolean
+  /** Atualiza UMA pessoa na lista após check-in/out (sem refetch). */
+  onPatchPerson: (key: string, next: AdminSearchItem) => void
   /** Pessoa em foco (painel de ação) — vem da pilha de navegação do AdminApp. */
   selected: AdminSearchItem | null
   /** Abrir o painel de uma pessoa (drill-down na pilha). */
@@ -54,6 +61,9 @@ export function ServicoScreen({
   onDateChange,
   initialArea,
   initialTurno,
+  items,
+  refreshing,
+  onPatchPerson,
   selected,
   onSelect,
   onBackPerson,
@@ -64,32 +74,22 @@ export function ServicoScreen({
   // Vindo do Dashboard, herda o turno de lá; senão, infere pelo período do dia.
   const [turno, setTurno] = useState<'Todos' | Turno>(() => initialTurno ?? inferTurno())
   const [sort, setSort] = useState<ServicoSort>('status')
-  const [items, setItems] = useState<AdminSearchItem[]>([])
-  const [loading, setLoading] = useState(false)
   const [acting, setActing] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
-  const reqId = useRef(0)
 
-  // Busca com debounce. Sem nome lista todos os escalados dos filtros atuais.
-  useEffect(() => {
-    if (selected) return
-    const filters = {
-      area: area === 'Todas' ? undefined : area,
-      turno: turno === 'Todos' ? undefined : turno,
-      data: isoToBR(dateISO),
-    }
-    const id = ++reqId.current
-    setLoading(true)
-    const t = setTimeout(async () => {
-      try {
-        const env = await adminSearch(operador, query.trim(), filters)
-        if (id === reqId.current && env.ok && env.data) setItems(env.data.itens)
-      } finally {
-        if (id === reqId.current) setLoading(false)
-      }
-    }, DEBOUNCE_MS)
-    return () => clearTimeout(t)
-  }, [operador, query, area, turno, dateISO, selected])
+  const loading = items === null
+
+  // Filtro NO CLIENTE sobre os dados já buscados do dia. Sem nome (<2 chars)
+  // lista todos que batem nos filtros de área/turno.
+  const filtered = useMemo(() => {
+    const q = deburr(query.trim())
+    return (items ?? []).filter(
+      (it) =>
+        (area === 'Todas' || it.escala.area === area) &&
+        (turno === 'Todos' || it.escala.turno === turno) &&
+        (q.length < 2 || deburr(it.nome).includes(q)),
+    )
+  }, [items, query, area, turno])
 
   async function act(item: AdminSearchItem) {
     setActing(true)
@@ -100,16 +100,30 @@ export function ServicoScreen({
         area: item.escala.area,
         turno: item.escala.turno,
       }
-      const env =
-        item.estado === 'CAN_CHECKIN'
-          ? await adminCheckin(operador, e)
-          : await adminCheckout(operador, e)
-      if (env.ok && env.data) {
-        const verb = item.estado === 'CAN_CHECKIN' ? 'Check-in' : 'Check-out'
-        setToast(`${verb} de ${item.nome.split(' ')[0]} registrado por você`)
-        onBackPerson() // volta à lista; o efeito re-busca e atualiza o selo
+      if (item.estado === 'CAN_CHECKIN') {
+        const env = await adminCheckin(operador, e)
+        if (env.ok && env.data) {
+          // Patch local: só esta pessoa muda de estado (sem refetch do dia).
+          onPatchPerson(personKey(item), { ...item, estado: 'IN_SERVICE', checkinAt: env.data.checkinAt })
+          setToast(`Check-in de ${item.nome.split(' ')[0]} registrado por você`)
+          onBackPerson()
+        } else {
+          setToast('Não foi possível registrar. Tente de novo.')
+        }
       } else {
-        setToast('Não foi possível registrar. Tente de novo.')
+        const env = await adminCheckout(operador, e)
+        if (env.ok && env.data) {
+          onPatchPerson(personKey(item), {
+            ...item,
+            estado: 'DONE',
+            checkinAt: env.data.checkinAt ?? item.checkinAt,
+            checkoutAt: env.data.checkoutAt,
+          })
+          setToast(`Check-out de ${item.nome.split(' ')[0]} registrado por você`)
+          onBackPerson()
+        } else {
+          setToast('Não foi possível registrar. Tente de novo.')
+        }
       }
     } catch {
       setToast('Falha de conexão. Tente de novo.')
@@ -170,7 +184,7 @@ export function ServicoScreen({
   }
 
   // ── Lista (busca / filtro) ───────────────────────────────────────
-  const sortedItems = [...items].sort((a, b) =>
+  const sortedItems = [...filtered].sort((a, b) =>
     sort === 'nome'
       ? a.nome.localeCompare(b.nome, 'pt')
       : sort === 'area'
@@ -183,6 +197,7 @@ export function ServicoScreen({
       tab={tab}
       onTab={onTab}
       onLogout={onLogout}
+      refreshing={refreshing}
       dateISO={dateISO}
       onDateChange={onDateChange}
     >

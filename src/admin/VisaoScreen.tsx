@@ -1,16 +1,47 @@
 // F6-A · Visão global (Dashboard) — US-A2.
-// Status de todas as áreas, com polling leve. Tocar num card abre Serviço
-// já filtrado pela área (onPickArea).
-import { useCallback, useEffect, useState } from 'react'
-import { adminDashboard } from '@/api/adminClient'
-import type { AdminDashboardResult } from '@/types/admin'
+// Agrega os escalados do dia (vindos do store compartilhado) por área, NO
+// CLIENTE — trocar o turno só recomputa, não busca de novo. Tocar num card abre
+// Serviço já filtrado pela área (onPickArea).
+import { useMemo, useState } from 'react'
+import type { AdminSearchItem, AreaStatus, StatusCounts } from '@/types/admin'
 import type { Area, Turno } from '@/types/api'
-import { inferTurno, isoToBR } from '@/lib/date'
+import { inferTurno } from '@/lib/date'
 import { AdminShell } from './AdminShell'
 import { ProgressBar, pct, type AdminTab } from './ui'
 
-const POLL_MS = 25000
 const TURNOS: Array<'Todos' | Turno> = ['Todos', 'Manhã', 'Noite']
+
+function emptyCounts(): StatusCounts {
+  return { escalados: 0, pendentes: 0, emServico: 0, concluidos: 0, comparecimento: 0 }
+}
+
+const ratio = (c: StatusCounts) =>
+  c.escalados === 0 ? 0 : (c.emServico + c.concluidos) / c.escalados
+
+/** Agrega a lista de escalados em resumo + contadores por área (igual ao backend). */
+function aggregate(items: AdminSearchItem[]): { resumo: StatusCounts; areas: AreaStatus[] } {
+  const byArea = new Map<Area, AreaStatus>()
+  const resumo = emptyCounts()
+  for (const it of items) {
+    const a = byArea.get(it.escala.area) ?? { area: it.escala.area, ...emptyCounts() }
+    a.escalados += 1
+    resumo.escalados += 1
+    if (it.estado === 'IN_SERVICE') {
+      a.emServico += 1
+      resumo.emServico += 1
+    } else if (it.estado === 'DONE') {
+      a.concluidos += 1
+      resumo.concluidos += 1
+    } else {
+      a.pendentes += 1
+      resumo.pendentes += 1
+    }
+    byArea.set(it.escala.area, a)
+  }
+  const areas = [...byArea.values()].map((a) => ({ ...a, comparecimento: ratio(a) }))
+  resumo.comparecimento = ratio(resumo)
+  return { resumo, areas }
+}
 
 type SortMode = 'pctAsc' | 'pctDesc' | 'nome'
 const SORT_LABEL: Record<SortMode, string> = {
@@ -27,6 +58,9 @@ interface VisaoScreenProps {
   /** Data de referência (ISO) + handler de troca, exibidos no header. */
   dateISO: string
   onDateChange: (iso: string) => void
+  /** Escalados do dia (store compartilhado); `null` = ainda carregando. */
+  items: AdminSearchItem[] | null
+  refreshing: boolean
   /** Abre Serviço filtrado pela área, carregando o turno atual do Dashboard. */
   onPickArea: (area: Area, turno: 'Todos' | Turno) => void
 }
@@ -38,42 +72,22 @@ export function VisaoScreen({
   onLogout,
   dateISO,
   onDateChange,
+  items,
+  refreshing,
   onPickArea,
 }: VisaoScreenProps) {
   // Filtro inicial conforme o período do dia (Manhã/Noite).
   const [turno, setTurno] = useState<'Todos' | Turno>(() => inferTurno())
   const [sort, setSort] = useState<SortMode>('pctAsc')
-  const [result, setResult] = useState<AdminDashboardResult | null>(null)
-  const [refreshing, setRefreshing] = useState(false)
 
-  const load = useCallback(async () => {
-    setRefreshing(true)
-    try {
-      const env = await adminDashboard(operador, {
-        turno: turno === 'Todos' ? undefined : turno,
-        data: isoToBR(dateISO),
-      })
-      if (env.ok && env.data) setResult(env.data)
-    } catch {
-      // mantém o último resultado
-    } finally {
-      setRefreshing(false)
-    }
-  }, [operador, turno, dateISO])
+  // Agrega no cliente sobre os dados já buscados — trocar o turno NÃO refaz a
+  // busca; só refiltra/recomputa a lista do dia.
+  const r = useMemo(() => {
+    if (items === null) return null
+    const filtered = turno === 'Todos' ? items : items.filter((it) => it.escala.turno === turno)
+    return aggregate(filtered)
+  }, [items, turno])
 
-  useEffect(() => {
-    let active = true
-    void load()
-    const id = setInterval(() => {
-      if (!document.hidden && active) void load()
-    }, POLL_MS)
-    return () => {
-      active = false
-      clearInterval(id)
-    }
-  }, [load])
-
-  const r = result
   const sortedAreas = r
     ? [...r.areas].sort((a, b) =>
         sort === 'nome'
@@ -93,7 +107,9 @@ export function VisaoScreen({
       dateISO={dateISO}
       onDateChange={onDateChange}
     >
-      <p className="text-lg font-semibold text-ink">Olá {operador},</p>
+      <p className="text-lg font-semibold text-ink">
+        Olá{operador && operador !== 'desconhecido' ? ` ${operador}` : ''},
+      </p>
 
       <div className="flex items-center gap-2">
         <span className="text-label font-semibold text-ink">Turno</span>

@@ -39,16 +39,22 @@ de marca). O `/admin` é um **segundo entrypoint** no mesmo bundle, não um app 
   auditoria (`operador` = e-mail).
 - Logout/identidade são responsabilidade do Zero Trust; o app só consome a identidade.
 
-### 2.2 Backend (dívida de segurança aceita nesta fase)
+### 2.2 Backend — token compartilhado (implementado · Jun/2026)
 > **Decisão consciente:** os `action`s de admin rodam no **mesmo Apps Script `/exec`**, que
-> permanece **público** (Zero Trust protege só o front estático). Nesta fase **aceitamos o
-> risco** — obscuridade da `action` + porte/baixo risco da igreja.
+> permanece **público** (Zero Trust protege só o front estático). A trava principal continua
+> sendo o **Zero Trust** na frente do `/admin`; o token abaixo é um **reforço** contra chamadas
+> anônimas casuais ao `/exec`, não um segredo forte.
 
 - O `operador` (e-mail) vai **no corpo** da requisição, preenchido pelo front a partir do
   `get-identity`. O backend **confia** nesse valor (não há verificação server-side da identidade).
-- **[A DEFINIR — pós-Fase 6]** Fechar o buraco com **token compartilhado no header** validado
-  pelo Apps Script, ou mover os `action`s de admin para um **Worker atrás de Zero Trust**
-  (mesma identidade do front). Registrado em §7.
+- **Token compartilhado (resolvido):** toda `action` de admin exige um campo `token` no corpo,
+  validado pelo Apps Script (`requireAdmin_` em `Admin.gs`) contra a **Script Property
+  `ADMIN_TOKEN`**. Token errado/ausente ⇒ `INVALID_INPUT` ("Não autorizado."). Se a property
+  **não** estiver definida, o gate **não bloqueia** (modo dev). O front injeta o token via
+  `VITE_ADMIN_TOKEN` (ver `src/lib/adminEnv.ts` + `src/api/adminClient.ts`).
+  - ⚠️ Como é SPA, o token fica **embutido no bundle** (visível no devtools). Por isso é reforço,
+    não trava — a proteção real é o Zero Trust. Blindagem futura: mover os `action`s para um
+    **Worker atrás de Zero Trust** injetando o token server-side.
 - Mantém-se a regra do PRD: **alterações de permissão/compartilhamento de planilha não são
   feitas pelo app** — são manuais.
 
@@ -280,9 +286,14 @@ sempre encaminha para Serviço, evitando duplicar a lista de pessoas em duas tel
 
 ## 5. Extensão do Contrato de API
 
+> **Status (Jun/2026): implementado e no ar.** As 5 `action`s vivem em `docs/Admin.gs`
+> (arquivo independente que reusa os helpers do `Code_otimizado.gs`); o roteamento são 5
+> `case` no `doPost`. Verificado ao vivo contra o Web App de produção.
+>
 > Mesmo envelope do Contrato v1.2 (`{ ok, state?, data, error }`), mesmo `POST` com
 > `text/plain` p/ Apps Script, HTTP sempre 200. Novos `action`s abaixo. Todos recebem
-> **`operador`** (e-mail do Zero Trust, via `get-identity`) — confiado pelo backend (§2.2).
+> **`operador`** (e-mail do Zero Trust, via `get-identity`) — confiado pelo backend (§2.2) —
+> e exigem **`token`** (auth compartilhada, §2.2).
 
 ### 5.1 `POST adminDashboard` — Visão global (US-A2)
 **Request**
@@ -355,8 +366,8 @@ Reutilizam a mesma gravação do MVP (`/checkin`/`/checkout`) na chave `Telefone
 { "action": "adminUpdatePhone", "operador": "admin@seramor.com.br",
   "voluntarioId": "Louvor::Maria Oliveira", "telefoneNovo": "11999998888" }
 ```
-> Identificação do voluntário: **[A DEFINIR]** — usar par `area + nome` (como acima) ou um id estável
-> se a `Base Voluntarios` ganhar coluna de id. Por ora `area + nome` resolve (homônimos desambiguados pela área).
+> Identificação do voluntário: par **`area + nome`** (`voluntarioId = "Área::Nome"`). Resolve
+> homônimos entre áreas; homônimo **dentro** da mesma área é o único ponto cego (aceito).
 
 **Sucesso**
 ```json
@@ -365,8 +376,20 @@ Reutilizam a mesma gravação do MVP (`/checkin`/`/checkout`) na chave `Telefone
             "gravado": ["origem", "base"], "operador": "admin@seramor.com.br" },
   "error": null }
 ```
-**Comportamento:** localiza a linha do voluntário na aba `Voluntários` da **planilha da área** e grava o
-telefone; em seguida atualiza a linha em **`Base Voluntarios`**. `gravado` indica onde teve efeito.
+**Comportamento (implementado · `Admin.gs`):**
+1. Acha o voluntário na `Base Voluntarios` (ativo) por `Área + Nome` → obtém `telefoneAntigo`.
+2. Valida que `telefoneNovo` não pertence a **outro** ativo (senão `DUPLICATE_PHONE`).
+3. **Origem:** abre a **planilha da área** (cada área tem spreadsheet próprio, mapa em
+   `ADMIN_CONFIG.ORIGEM`), aba **`Voluntários`**, e localiza a linha pela combinação
+   **`Nome completo` + `Telefone` ATUAL** (para não atualizar a pessoa errada). Se o match não
+   for **exatamente um**, devolve `ORIGIN_NOT_FOUND` (não adivinha). Grava `telefoneNovo`.
+4. **Compilada:** atualiza a linha em **`Base Voluntarios`** (efeito imediato no `/resolve`).
+5. Tudo sob **`LockService`** (escreve em 2 planilhas).
+
+> **Topologia da origem (confirmada · Jun/2026):** planilhas **separadas por área** (11 IDs no
+> `Admin.gs`). Aba `Voluntários` é um **cadastro (1 linha por pessoa)** com colunas
+> `Nome completo · Telefone · Função · Observações · Ativo? · Inicio`. A consolidação que gera
+> `Base Voluntarios` **preserva** o telefone editado na origem — por isso gravar origem + base é seguro.
 
 ### Erros novos (somam ao catálogo §5 do Contrato)
 | `code` | Quando | Mensagem ao usuário |
@@ -387,7 +410,7 @@ telefone; em seguida atualiza a linha em **`Base Voluntarios`**. `gravado` indic
 | **Polling do Dashboard** | Intervalo **20–30s** (leve). Pausar quando a aba está em background (`visibilitychange`). **[A DEFINIR]** intervalo fino no piloto |
 | **Latência** | `adminDashboard` lê a aba inteira 1×/poll → cabe na cota (Addendum §2 mediu ~4s no Apps Script). Se o painel ficar pesado, candidato a `CacheService`/Worker (mesma mitigação do MVP) |
 | **Concorrência** | `adminCheckin/out` escrevem em linha única (sem lock). `adminUpdatePhone` mexe em 2 planilhas → usar `LockService` no append/edit |
-| **Auditoria** | Toda ação de admin registra `operador` + timestamp (em `Observações` da linha afetada). **[A DEFINIR]** aba `Log Admin` dedicada se quiserem trilha consolidada |
+| **Auditoria** | **Decidido:** só na coluna `Observações` da linha afetada (`[manual: <operador> em DD/MM/YYYY HH:MM]`, anexado sem sobrescrever). Aba `Log Admin` dedicada fica como **melhoria futura** se quiserem trilha consolidada |
 | **Responsividt.** | Dashboard em grid ≥768px; demais telas mobile-first |
 | **Acessibilidade** | WCAG AA, toque ≥44px — herdado do MVP |
 
@@ -395,23 +418,28 @@ telefone; em seguida atualiza a linha em **`Base Voluntarios`**. `gravado` indic
 
 ## 7. Pendências de Discovery (Fase 6 enxuta)
 
-1. **Backend admin sem auth (dívida aceita):** definir, pós-Fase 6, entre **token no header**
-   validado pelo Apps Script **ou** Worker atrás de Zero Trust. (§2.2)
-2. **Identificação do voluntário em `adminUpdatePhone`:** `area + nome` vs. coluna de id estável na base. (§5.4)
-3. **Coluna de auditoria:** `Observações` (anexado) vs. aba `Log Admin` dedicada. (§6)
-4. **Atualização de telefone na origem:** confirmar que o App Script consegue localizar a
-   planilha-origem correta por área e que a consolidação **preserva** o telefone editado.
+**Resolvidas (Jun/2026 · backend `Admin.gs` no ar):**
+1. ~~Auth do backend admin~~ → **token compartilhado** (`ADMIN_TOKEN`/`VITE_ADMIN_TOKEN`). (§2.2)
+2. ~~Identificação em `adminUpdatePhone`~~ → par **`area + nome`** (`voluntarioId`). (§5.4)
+3. ~~Coluna de auditoria~~ → **só `Observações`** (anexado); `Log Admin` é melhoria futura. (§6)
+4. ~~Telefone na origem~~ → **planilhas separadas por área** (IDs no `Admin.gs`), match por
+   `Nome completo + Telefone atual`; consolidação **preserva** o telefone editado. (§5.4)
+
+**Em aberto:**
 5. **Intervalo de polling** do Dashboard — calibrar no piloto.
 6. **Override de escala e CRUD completo de voluntários** (US-A3/US-A4 originais) — **fora deste recorte**,
    tratar em iteração posterior da Fase 6.
+7. **Blindagem da auth** — se o token embutido no bundle incomodar, mover `action`s de admin para
+   **Worker atrás de Zero Trust** injetando o token server-side. (§2.2)
 
 ---
 
 ## 8. Addendum de implementação (front · Jun/2026)
 
 > Consolida o que foi efetivamente construído no frontend (React) e **prevalece**
-> sobre as §§ acima nos pontos abaixo. O **backend Apps Script dos `action`s de
-> admin ainda não existe** — o `/admin` roda contra um **mock** fiel a esta spec.
+> sobre as §§ acima nos pontos abaixo. O **backend Apps Script dos `action`s de admin
+> está no ar** (`docs/Admin.gs`, §5); o **mock** (`src/api/adminMock.ts`) permanece como
+> fallback de **dev** via `VITE_ADMIN_MOCK=1`.
 
 ### 8.1 Stack, rota e mock toggle
 > Supera §1 (Onde mora) e §2.
@@ -420,8 +448,10 @@ telefone; em seguida atualiza a linha em **`Base Voluntarios`**. `gravado` indic
   (`/admin` → `AdminApp`; resto → check-in). Sem dependência de router.
   `public/_redirects` garante o SPA fallback no host estático (`/* → /index.html`).
 - **Mock toggle `VITE_ADMIN_MOCK=1`** (`.env`): faz o `/admin` usar `src/api/adminMock.ts`
-  mesmo com `VITE_API_URL` apontando pro backend real do MVP. Desligar quando o
-  backend admin existir. Lógica em `src/lib/adminEnv.ts` (`ADMIN_MOCK`).
+  mesmo com `VITE_API_URL` apontando pro backend real. **Em produção está `0`** (backend no
+  ar); o flag fica só para dev/preview. Lógica em `src/lib/adminEnv.ts` (`ADMIN_MOCK`).
+- **Token de auth `VITE_ADMIN_TOKEN`** (`.env`): injetado no corpo das `action`s admin por
+  `adminClient` quando preenchido; deve casar com a Script Property `ADMIN_TOKEN` (§2.2).
 - **Camada de API:** `src/api/adminClient.ts` reusa o transporte `send` do MVP
   (timeout + retry). Tipos em `src/types/admin.ts`.
 - **Identidade/Sair:** `src/lib/zeroTrust.ts` — `getIdentity()` lê o

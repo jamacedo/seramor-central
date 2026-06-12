@@ -46,30 +46,37 @@ O `.gitignore` ignora `.env` e `.env.*` (só `.env.example` é versionado). O Vi
 estiver configurado em **Pages → Settings → Environment variables → Production** —
 não o seu `.env` local.
 
-| Variável | Produção (hoje) | Efeito se faltar |
+| Variável | Produção (hoje · backend admin no ar) | Efeito se faltar |
 |----------|------------------|------------------|
 | `VITE_API_URL` | **Apps Script de PRODUÇÃO** (`.../exec`) | Vazio → o check-in (`/`) usa o **mock** (`src/api/mock.ts`) → **check-in falso em produção** 🔴 |
-| `VITE_ADMIN_MOCK` | **`1`** (enquanto não há backend admin) | Sem o flag + `VITE_API_URL` setado → `/admin` tenta os `action`s admin no Apps Script, que **não existem** → **/admin quebrado** 🔴 |
+| `VITE_ADMIN_MOCK` | **`0`** (backend admin existe) | `=1` → `/admin` volta ao mock/demo (identidade fake); ausente → real |
+| `VITE_ADMIN_TOKEN` | **token compartilhado** (= Script Property `ADMIN_TOKEN`) | Vazio → front não envia `token` → backend responde `INVALID_INPUT` ("Não autorizado.") em toda ação admin → **/admin quebrado** 🔴 |
 
 **Matriz de comportamento:**
 
-| Env no Pages | Check-in (`/`) | Painel (`/admin`) |
+| Env no dashboard | Check-in (`/`) | Painel (`/admin`) |
 |---|---|---|
 | Nada setado | mock (falso) 🔴 | mock (demo) |
-| `VITE_API_URL=<prod>`, sem `VITE_ADMIN_MOCK` | backend real ✅ | **quebrado** 🔴 |
 | `VITE_API_URL=<prod>` + `VITE_ADMIN_MOCK=1` | backend real ✅ | mock (demo) — ver nota |
+| `VITE_API_URL=<prod>` + `VITE_ADMIN_MOCK=0`, **sem** `VITE_ADMIN_TOKEN` | backend real ✅ | **"Não autorizado"** 🔴 |
+| `VITE_API_URL=<prod>` + `VITE_ADMIN_MOCK=0` + `VITE_ADMIN_TOKEN=<token>` | backend real ✅ | **real ✅** (estado atual) |
 
 → Estado coerente **hoje**: `VITE_API_URL` = Apps Script de produção **+**
-`VITE_ADMIN_MOCK=1`. Confirme que o Web App de produção aponta para a **planilha de
-produção** (`10lmOfSE4O8CnJOmyZ96i0f2k26uDxrV5QCEP9DlurRA`), não a de homolog
-(`1nxhXn6_39j9...`).
+`VITE_ADMIN_MOCK=0` **+** `VITE_ADMIN_TOKEN` igual à Script Property `ADMIN_TOKEN`.
+Confirme que o Web App de produção aponta para a **planilha de produção**
+(`10lmOfSE4O8CnJOmyZ96i0f2k26uDxrV5QCEP9DlurRA`), não a de homolog (`1nxhXn6_39j9...`).
 
 > **Nota — `VITE_ADMIN_MOCK=1` acopla dados E identidade.** Com o flag ligado, o
 > `/admin` usa o mock *e* a identidade vira fixa (`admin@seramor.com.br`), e o "Sair"
-> vai para `/` em vez do logout do Zero Trust. Ou seja: **`/admin` em produção com o
-> flag ligado é uma demo** (a auditoria/operador também é fake). Não dá, com o toggle
-> atual, ter "identidade real do Zero Trust + dados mockados". Quando o backend admin
-> existir, **desligue o flag** (remova ou `=0`).
+> vai para `/` em vez do logout do Zero Trust. Ou seja: **`/admin` com o flag ligado é
+> uma demo** (auditoria/operador fake). Em produção o flag está **`0`** desde Jun/2026.
+> Mantemos o mock só para dev/preview.
+
+> **Nota — token compartilhado é reforço, não trava.** Por ser SPA, o `VITE_ADMIN_TOKEN`
+> fica **embutido no bundle** (visível no devtools) — barra chamadas anônimas casuais ao
+> `/exec`, mas a proteção real do `/admin` continua sendo o **Zero Trust** (§4). Trocar o
+> token = atualizar a Script Property `ADMIN_TOKEN` **e** a env `VITE_ADMIN_TOKEN`, depois
+> rebuildar. (Ver Especificação Fase 6 §2.2.)
 
 ---
 
@@ -136,8 +143,10 @@ links resolvem no client (`src/main.tsx`). **Sem isso, `/admin` daria 404.**
 
 ## 6. Checklist de go-live (deploy via `main`)
 
-1. **Env vars (Production):** `VITE_API_URL=<Apps Script PROD /exec>` + `VITE_ADMIN_MOCK=1`.
-2. Web App de produção do Apps Script aponta para a **planilha de produção**.
+1. **Env vars (Production):** `VITE_API_URL=<Apps Script PROD /exec>` + `VITE_ADMIN_MOCK=0`
+   + `VITE_ADMIN_TOKEN=<token>` (igual à Script Property `ADMIN_TOKEN`).
+2. Web App de produção do Apps Script aponta para a **planilha de produção** e tem o
+   `Admin.gs` publicado (+ os 5 `case` no `doPost`) e a Script Property `ADMIN_TOKEN` setada.
 3. **Access policy (Zero Trust)** cobrindo `/admin` no **domínio de produção** e nas
    **previews `*.pages.dev`**.
 4. Build/deploy: `npm run build` → `dist`; `wrangler.toml` com
@@ -146,25 +155,39 @@ links resolvem no client (`src/main.tsx`). **Sem isso, `/admin` daria 404.**
 5. Comunicar que instalações PWA existentes atualizam **no reload seguinte**.
 6. **Sanidade pós-deploy:**
    - `/` resolve um telefone **real** (não cai no mock) e faz check-in/out no backend.
-   - `/admin` **exige login do Zero Trust** (abrir anônimo deve barrar).
+   - `/admin` **exige login do Zero Trust** (abrir anônimo deve barrar) e carrega dados
+     reais **sem** "Não autorizado" (token ok).
    - Deep link direto em `/admin` carrega (não 404).
+   - **Truque de verificação do bundle (sem login):** o hash do JS servido deve bater com o
+     build local, e o token deve estar embutido:
+     ```bash
+     curl -s http://servir.igrejaseramor.com.br/ | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js'
+     curl -s --compressed http://servir.igrejaseramor.com.br/assets/index-<hash>.js | grep -c <token>
+     ```
 
 ---
 
-## 7. Quando o backend admin existir (Fase 6 “real”)
+## 7. Backend admin (Fase 6 “real”) — ✅ no ar desde Jun/2026
 
-1. Implementar os `action`s no Apps Script: `adminDashboard`, `adminSearch`,
-   `adminCheckin`, `adminCheckout`, `adminUpdatePhone` + auditoria em `Observações`
-   (ver `docs/Especificacao_Fase6_Admin.md` §5).
-2. **Desligar `VITE_ADMIN_MOCK`** no Pages (remover ou `=0`) → `/admin` passa a usar a
-   identidade real do Zero Trust e os dados reais.
-3. Revisar a dívida de segurança: os endpoints admin do Apps Script ficam **públicos**
-   (Zero Trust protege só o front). Plano: token compartilhado no header validado pelo
-   Apps Script **ou** mover os `action`s admin para um Worker atrás de Zero Trust
-   (ver Especificação Fase 6 §2.2 / §7).
+Feito nesta fase (não é mais pendência):
+1. ✅ As 5 `action`s estão no Apps Script (`docs/Admin.gs` + 5 `case` no `doPost` do
+   `Code_otimizado.gs`): `adminDashboard`, `adminSearch`, `adminCheckin`, `adminCheckout`,
+   `adminUpdatePhone` + auditoria em `Observações` (ver `Especificacao_Fase6_Admin.md` §5).
+2. ✅ `VITE_ADMIN_MOCK=0` em produção → `/admin` usa identidade real do Zero Trust + dados reais.
+3. ✅ Dívida de segurança mitigada com **token compartilhado** (`ADMIN_TOKEN` no Apps Script ⇄
+   `VITE_ADMIN_TOKEN` no build). Reforço, não trava — a proteção real é o Zero Trust. Blindagem
+   futura (Worker atrás de ZT) segue como opção (Especificação Fase 6 §2.2 / §7).
+
+**Operação contínua:**
+- **Rotacionar o token:** atualizar a Script Property `ADMIN_TOKEN` **e** a env
+  `VITE_ADMIN_TOKEN` (mesmo valor), depois rebuildar (`git push` na `main`).
+- **Mexer no `Admin.gs`:** após editar, publicar **nova versão** do Web App (Implantar →
+  Gerenciar implantações → editar → Nova versão), senão o `/exec` segue na versão antiga.
 
 ---
 
-*Runbook de deploy no Cloudflare Pages. Acompanha o README e a
+> **URL de produção:** `http://servir.igrejaseramor.com.br/` (Worker `seramor-central`).
+
+*Runbook de deploy no Cloudflare Workers (static assets). Acompanha o README e a
 `docs/Especificacao_Fase6_Admin.md`. Atualize ao mudar env vars, hosting ou a
 configuração do Zero Trust.*
