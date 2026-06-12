@@ -86,6 +86,12 @@ function doPost(e) {
       case 'checkin':                 res = checkin(body); break;
       case 'checkout':                res = checkout(body); break;
       case 'registerOutsideSchedule': res = registerOutsideSchedule(body); break;
+      // Painel /admin (Fase 6) — handlers em Admin.gs.
+      case 'adminDashboard':          res = adminDashboard(body); break;
+      case 'adminSearch':             res = adminSearch(body); break;
+      case 'adminCheckin':            res = adminCheckin(body); break;
+      case 'adminCheckout':           res = adminCheckout(body); break;
+      case 'adminUpdatePhone':        res = adminUpdatePhone(body); break;
       default:                        res = err('INVALID_INPUT', 'Ação desconhecida.');
     }
     tlog('fim ' + body.action);

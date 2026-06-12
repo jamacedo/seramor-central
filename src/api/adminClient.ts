@@ -4,7 +4,7 @@
 
 import { send } from './client'
 import { adminMock } from './adminMock'
-import { ADMIN_MOCK } from '@/lib/adminEnv'
+import { ADMIN_MOCK, ADMIN_TOKEN } from '@/lib/adminEnv'
 import type { Area, Turno } from '@/types/api'
 import type {
   AdminCheckinResult,
@@ -23,8 +23,10 @@ async function adminPost<T>(req: AdminRequest): Promise<AdminEnvelope<T>> {
     await new Promise((r) => setTimeout(r, MOCK_DELAY_MS))
     return adminMock(req) as AdminEnvelope<T>
   }
+  // Auth (Fase 6 §2): anexa o token compartilhado no corpo quando configurado.
   // O envelope admin tem o mesmo formato do MVP, com `error.code` ampliado.
-  return (await send(req)) as unknown as AdminEnvelope<T>
+  const body = ADMIN_TOKEN ? { ...req, token: ADMIN_TOKEN } : req
+  return (await send(body)) as unknown as AdminEnvelope<T>
 }
 
 export function adminDashboard(

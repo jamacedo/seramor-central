@@ -12,3 +12,10 @@ export const ADMIN_MOCK = !API_URL || import.meta.env.VITE_ADMIN_MOCK === '1'
 
 /** Operador usado quando não há Zero Trust na frente (mock/dev). */
 export const DEV_OPERADOR = 'admin@seramor.com.br'
+
+/**
+ * Token compartilhado de admin (auth do backend, Fase 6 §2). Deve casar com a
+ * Script Property `ADMIN_TOKEN` do Apps Script. Vazio = não envia (modo dev,
+ * backend não bloqueia). Injetado no corpo das requisições por adminClient.
+ */
+export const ADMIN_TOKEN = (import.meta.env.VITE_ADMIN_TOKEN as string | undefined) ?? ''
