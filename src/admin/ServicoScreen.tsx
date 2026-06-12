@@ -36,6 +36,12 @@ interface ServicoScreenProps {
   /** Pré-filtros quando aberto a partir do Dashboard (F6-A). */
   initialArea?: Area
   initialTurno?: 'Todos' | Turno
+  /** Pessoa em foco (painel de ação) — vem da pilha de navegação do AdminApp. */
+  selected: AdminSearchItem | null
+  /** Abrir o painel de uma pessoa (drill-down na pilha). */
+  onSelect: (item: AdminSearchItem) => void
+  /** Voltar do painel para a lista (= "‹ Voltar" / botão do aparelho). */
+  onBackPerson: () => void
   onOpenCadastro: (target: CadastroTarget) => void
 }
 
@@ -48,6 +54,9 @@ export function ServicoScreen({
   onDateChange,
   initialArea,
   initialTurno,
+  selected,
+  onSelect,
+  onBackPerson,
   onOpenCadastro,
 }: ServicoScreenProps) {
   const [query, setQuery] = useState('')
@@ -57,7 +66,6 @@ export function ServicoScreen({
   const [sort, setSort] = useState<ServicoSort>('status')
   const [items, setItems] = useState<AdminSearchItem[]>([])
   const [loading, setLoading] = useState(false)
-  const [selected, setSelected] = useState<AdminSearchItem | null>(null)
   const [acting, setActing] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const reqId = useRef(0)
@@ -99,7 +107,7 @@ export function ServicoScreen({
       if (env.ok && env.data) {
         const verb = item.estado === 'CAN_CHECKIN' ? 'Check-in' : 'Check-out'
         setToast(`${verb} de ${item.nome.split(' ')[0]} registrado por você`)
-        setSelected(null) // volta à lista; o efeito re-busca e atualiza o selo
+        onBackPerson() // volta à lista; o efeito re-busca e atualiza o selo
       } else {
         setToast('Não foi possível registrar. Tente de novo.')
       }
@@ -114,7 +122,7 @@ export function ServicoScreen({
   if (selected) {
     const s = selected
     return (
-      <AdminShell onBack={() => setSelected(null)} onLogout={onLogout}>
+      <AdminShell onBack={onBackPerson} onLogout={onLogout}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
           <div>
             <h2 className="text-h2 text-ink">{s.nome}</h2>
@@ -249,7 +257,7 @@ export function ServicoScreen({
             <button
               key={`${it.telefone}-${it.escala.area}-${it.escala.turno}`}
               type="button"
-              onClick={() => setSelected(it)}
+              onClick={() => onSelect(it)}
               className="rounded-card bg-white p-3 text-left shadow-card active:scale-[0.99]"
             >
               <div className="flex items-center justify-between">

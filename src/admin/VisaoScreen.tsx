@@ -129,7 +129,7 @@ export function VisaoScreen({
               <ProgressBar value={r.resumo.comparecimento} />
             </div>
             <div className="mt-2 flex gap-4 text-helper text-muted">
-              <span>⬜ {r.resumo.pendentes}</span>
+              <span>⏳ {r.resumo.pendentes}</span>
               <span>🟡 {r.resumo.emServico}</span>
               <span>✅ {r.resumo.concluidos}</span>
             </div>
@@ -174,7 +174,7 @@ export function VisaoScreen({
                   </div>
                   <div className="mt-1.5 flex items-center justify-between text-helper text-muted">
                     <span>
-                      ⬜ {a.pendentes}&nbsp;&nbsp;🟡 {a.emServico}&nbsp;&nbsp;✅ {a.concluidos}
+                      ⏳ {a.pendentes}&nbsp;&nbsp;🟡 {a.emServico}&nbsp;&nbsp;✅ {a.concluidos}
                     </span>
                     <span aria-hidden className="text-primary">
                       ▸

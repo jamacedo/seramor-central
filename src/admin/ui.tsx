@@ -7,7 +7,7 @@ import type { AdminPersonState } from '@/types/admin'
 export type AdminTab = 'visao' | 'servico'
 
 const STATUS: Record<AdminPersonState, { dot: string; label: string; cls: string }> = {
-  CAN_CHECKIN: { dot: '⬜', label: 'Pendente', cls: 'text-muted' },
+  CAN_CHECKIN: { dot: '⏳', label: 'Pendente', cls: 'text-muted' },
   IN_SERVICE: { dot: '🟡', label: 'Em serviço', cls: 'text-warning' },
   DONE: { dot: '✅', label: 'Concluído', cls: 'text-success' },
 }
