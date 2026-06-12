@@ -268,9 +268,12 @@ export function ServicoScreen({
               </select>
             </label>
           </div>
-          {sortedItems.map((it) => (
+          {sortedItems.map((it, i) => (
+            // `#i` garante chave única: voluntários SEM telefone colidem em
+            // `personKey` (telefone vazio) e, sem o índice, o React não limpa os
+            // nós ao trocar o filtro (resultados "acumulados").
             <button
-              key={`${it.telefone}-${it.escala.area}-${it.escala.turno}`}
+              key={`${personKey(it)}#${i}`}
               type="button"
               onClick={() => onSelect(it)}
               className="rounded-card bg-white p-3 text-left shadow-card active:scale-[0.99]"
