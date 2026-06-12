@@ -46,6 +46,10 @@ export default defineConfig({
         // Precacheia só o app shell (HTML/CSS/JS/ícones/fonte).
         globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
         navigateFallback: '/index.html',
+        // Endpoints do Cloudflare Access (logout/identidade) NÃO podem ser
+        // servidos pelo app shell: precisam chegar ao edge para encerrar/ler a
+        // sessão do Zero Trust. Sem isto, o "Sair" recarrega o app sem deslogar.
+        navigateFallbackDenylist: [/^\/cdn-cgi\//],
         runtimeCaching: [
           {
             // API do Apps Script: SEMPRE rede, nunca cache (estado do servidor).

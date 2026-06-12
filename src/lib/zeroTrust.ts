@@ -16,11 +16,24 @@ interface AccessIdentity {
 }
 
 /** Encerra a sessão. Em produção, dispara o logout do Cloudflare Access. */
-export function logout(): void {
+export async function logout(): Promise<void> {
   if (ADMIN_MOCK) {
     // Dev/mock: sem Zero Trust — volta para o app do voluntário.
     window.location.href = '/'
     return
+  }
+  // O SW do PWA tem navigateFallback: sem cuidado, ele serviria a navegação
+  // para /cdn-cgi/access/logout a partir do cache (index.html) e o logout nunca
+  // chegaria ao Cloudflare. Removemos SW + caches antes de navegar para garantir
+  // que a saída atinja o edge e encerre a sessão — funciona mesmo para quem
+  // ainda tem o SW antigo (sem o denylist do vite.config) instalado.
+  try {
+    const regs = (await navigator.serviceWorker?.getRegistrations()) ?? []
+    await Promise.all(regs.map((r) => r.unregister()))
+    const keys = (await caches?.keys()) ?? []
+    await Promise.all(keys.map((k) => caches.delete(k)))
+  } catch {
+    // sem SW/caches acessíveis — segue para o logout do Access mesmo assim
   }
   window.location.href = '/cdn-cgi/access/logout'
 }
