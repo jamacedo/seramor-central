@@ -47,7 +47,9 @@ function StatusScreen({
 export default function AdminApp() {
   const [auth, setAuth] = useState<AuthState>('checking')
   const [operador, setOperador] = useState<string>('')
-  const nav = useAdminNav()
+  // Trava o Voltar no painel autenticado (evita sair para o redirect morto do
+  // Access). Em 'denied'/'offline' o Voltar é normal — o usuário pode sair.
+  const nav = useAdminNav(auth === 'authed')
   // Store único do dia: Visão e Serviço derivam tudo desta lista (busca 1×/data
   // + polling). Compartilhar aqui mantém os dados ao trocar de aba.
   const day = useDayData(operador, nav.dateISO)

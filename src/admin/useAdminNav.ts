@@ -8,7 +8,7 @@
 //     persistimos a raiz `servico` (+ filtros e data) em sessionStorage. Em
 //     Visão nada é guardado — o reload volta ao padrão (Visão). Drill-downs
 //     (pessoa, cadastro) também não persistem — evita exibir dado defasado.
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { todayISO } from '@/lib/date'
 import type { AdminSearchItem, CadastroTarget } from '@/types/admin'
 import type { Area, Turno } from '@/types/api'
@@ -53,12 +53,25 @@ export interface AdminNavApi {
   back: () => void
 }
 
-export function useAdminNav(): AdminNavApi {
+/**
+ * @param trapExit Enquanto `true` (painel autenticado), segura uma entrada de
+ *   histórico "sentinela": apertar Voltar no nível raiz mantém o usuário no
+ *   painel em vez de sair para as entradas (já consumidas) do redirect de login
+ *   do Cloudflare Access — revisitar essas entradas dá ERR_FAILED. Em
+ *   `false` (verificando/sessão encerrada/sem conexão) o Voltar é normal.
+ */
+export function useAdminNav(trapExit = false): AdminNavApi {
   const [stack, setStack] = useState<AdminNav[]>(() => {
     const p = loadPersisted()
     return [p?.root ?? { kind: 'visao' }]
   })
   const [dateISO, setDateISO] = useState<string>(() => loadPersisted()?.dateISO ?? todayISO())
+
+  // Profundidade corrente sem recriar o listener de popstate a cada navegação.
+  const depthRef = useRef(stack.length)
+  useEffect(() => {
+    depthRef.current = stack.length
+  }, [stack])
 
   // Persistência: só guardamos quando a raiz é Serviço (refresh mantém Serviço
   // com filtros + data). Em Visão limpamos o registro → reload volta ao padrão.
@@ -75,13 +88,23 @@ export function useAdminNav(): AdminNavApi {
     }
   }, [stack, dateISO])
 
-  // Botão Voltar do aparelho: o navegador já consumiu a entrada que empilhamos
-  // no drill-down; aqui só refletimos descendo um nível na pilha.
+  // Botão Voltar do aparelho. Em drill-down (profundidade > 1) o navegador já
+  // consumiu a entrada empilhada; aqui só descemos um nível na pilha. No nível
+  // raiz, se `trapExit`, reentramos a sentinela para NÃO sair do painel para as
+  // entradas mortas do redirect do Access (que dão ERR_FAILED ao revisitar).
   useEffect(() => {
-    const onPop = () => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s))
+    if (trapExit) window.history.pushState({ adminNav: 'root' }, '')
+
+    const onPop = () => {
+      if (depthRef.current > 1) {
+        setStack((s) => (s.length > 1 ? s.slice(0, -1) : s))
+      } else if (trapExit) {
+        window.history.pushState({ adminNav: 'root' }, '')
+      }
+    }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
-  }, [])
+  }, [trapExit])
 
   const push = useCallback((node: AdminNav) => {
     setStack((s) => [...s, node])

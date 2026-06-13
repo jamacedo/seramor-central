@@ -29,18 +29,20 @@ export type IdentityResult =
   | { status: 'offline' }
 
 /**
- * Remove o service worker e os caches do PWA, para a navegação SEGUINTE atingir
- * a rede/edge em vez de ser servida pelo app shell em cache (navigateFallback).
- * Sem isto, o logout/relogin do PWA instalado seria interceptado pelo SW.
+ * Desregistra o service worker, para a navegação SEGUINTE atingir a rede/edge
+ * em vez de ser servida pelo app shell em cache (navigateFallback) — necessário
+ * para o logout chegar ao Access e para o relogin reexigir login.
+ *
+ * NÃO apagamos os caches: remover a precache com o SW ainda ativo (ou prestes a
+ * reinstalar) deixa navegações sem shell → ERR_FAILED. O Workbox já versiona a
+ * precache no próximo SW; desregistrar basta para soltar o controle.
  */
-async function clearAppCaches(): Promise<void> {
+async function unregisterServiceWorker(): Promise<void> {
   try {
     const regs = (await navigator.serviceWorker?.getRegistrations()) ?? []
     await Promise.all(regs.map((r) => r.unregister()))
-    const keys = (await caches?.keys()) ?? []
-    await Promise.all(keys.map((k) => caches.delete(k)))
   } catch {
-    // sem SW/caches acessíveis — segue assim mesmo
+    // sem SW acessível — segue assim mesmo
   }
 }
 
@@ -51,7 +53,7 @@ export async function logout(): Promise<void> {
     window.location.href = '/'
     return
   }
-  await clearAppCaches()
+  await unregisterServiceWorker()
   // Navegação de topo para o endpoint de logout do Access: limpa o cookie
   // CF_Authorization no edge e encerra a sessão.
   window.location.href = '/cdn-cgi/access/logout'
@@ -66,7 +68,7 @@ export async function relogin(): Promise<void> {
     window.location.reload()
     return
   }
-  await clearAppCaches()
+  await unregisterServiceWorker()
   window.location.replace('/admin')
 }
 
