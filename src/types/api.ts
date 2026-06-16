@@ -23,6 +23,7 @@ export const AREAS = [
   'Logística',
   'Louvor',
   'Multimídia',
+  'Produção',
   'Som',
   'Transmissão',
 ] as const

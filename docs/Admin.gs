@@ -39,6 +39,7 @@ var ADMIN_CONFIG = {
     'Transmissão':  '1yWlJy_ffiNCUAXMi3sfHlE4kqGgMiERfOx6NLFTYoLE',
     'Som':          '1rrNPCIuRG3_7oySFEKhXKcC1etl7IRFuwtp5Flbuios',
     'Multimídia':   '1riwyUOz_LOwG9lOz5I9spjsjKlL1o98QoJEYt0jUnu4',
+    'Produção':     '1-w_OWPXlzp6t0d4-posKJ-xCCSM3SG90rI7tElLA5ds',
     'Louvor':       '176lC9i1Q2pIfSO-0WvXijpc1AJybZjqCm6DQebb3yJM',
     'Logística':    '1lo8T0h5v2YKvF4bGxGCfOUoRDV1waZhwvl5UJCEokdk',
     'Foto e Vídeo': '1bkC19i_ECpDKo1Jq0zLevjQHTFD-k_5X79Ta3tatSkc',
