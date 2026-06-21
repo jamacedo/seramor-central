@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Folha QR — Check-in / Check-out · Ser Amor</title>
+
+<!--
+  ┌─────────────────────────────────────────────────────────────┐
+  │  QR e logo ficam em  docs/assets/  (troque os arquivos lá    │
+  │  para atualizar). Para imprimir: abra no navegador e use     │
+  │  Ctrl/Cmd + P · papel A4 retrato.                           │
+  └─────────────────────────────────────────────────────────────┘
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --primary:#D3642A;       /* laranja Ser Amor */
+    --primary-dark:#A84D1E;
+    --checkin:#16A34A;       /* verde chegada  */
+    --checkout:#2563EB;      /* azul saída     */
+    --ink:#1F2937;
+    --muted:#6B7280;
+    --line:#E5E7EB;
+    --paper:#FFFFFF;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#F3F4F6;font-family:Inter,system-ui,sans-serif;color:var(--ink)}
+
+  /* Folha A4 retrato */
+  .page{
+    width:210mm;min-height:297mm;margin:12px auto;background:var(--paper);
+    padding:16mm 14mm;display:flex;flex-direction:column;gap:7mm;
+    box-shadow:0 6px 24px rgba(0,0,0,.12);
+  }
+
+  /* Cabeçalho */
+  .header{display:flex;align-items:center;gap:14px;border-bottom:3px solid var(--primary);padding-bottom:10px}
+  .brand-mark{width:54px;height:54px;flex:none;object-fit:contain}
+  .brand-name{font-weight:700;font-size:15px;color:var(--muted);letter-spacing:.3px}
+  .title{font-weight:900;font-size:26px;line-height:1.1;margin-top:2px}
+  .title em{font-style:normal;color:var(--ink)}
+
+  /* QR central */
+  .qr-block{display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0 2px}
+  .qr-call{font-weight:800;font-size:20px}
+  .qr-call .ico{color:var(--primary)}
+  #qr{
+    padding:10px;background:#fff;border:2px solid var(--line);border-radius:18px;
+    display:flex;align-items:center;justify-content:center;break-inside:avoid;
+  }
+  #qr img,#qr svg{width:58mm;height:58mm;display:block;object-fit:contain}
+  .qr-url{font-weight:600;font-size:14px;color:var(--muted)}
+  .qr-url b{color:var(--ink)}
+
+  /* Caixas dos dois momentos (chegada / saída) */
+  .moments{display:flex;flex-direction:column;gap:10px}
+  .moment{border:2px solid var(--c);border-radius:18px;overflow:hidden;background:var(--bg)}
+  .moment .bar{
+    background:var(--c);color:#fff;padding:10px 16px;font-weight:800;font-size:16px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .bar-ico{width:22px;height:22px;flex:none;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .moment .body{padding:12px 18px;display:flex;flex-direction:column;gap:8px}
+  .co-line{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.35}
+  .co-line .dot{
+    width:22px;height:22px;border-radius:50%;background:var(--c);color:#fff;flex:none;margin-top:1px;
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;
+  }
+  .co-line b{color:var(--c)}
+  .co-note{color:var(--muted);font-weight:600}
+  .co-ex{
+    align-self:flex-start;background:#fff;border:1.5px dashed var(--c);border-radius:10px;
+    padding:6px 12px;font-size:14px;font-weight:600;color:var(--ink);
+  }
+  .co-ex b{color:var(--c)}
+
+  /* Rodapé */
+  .footer{margin-top:auto;border-top:1.5px solid var(--line);padding-top:10px;
+    display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12.5px}
+  .footer b{color:var(--ink)}
+
+  /* Impressão */
+  @page{size:A4 portrait;margin:0}
+  @media print{
+    html,body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .page{margin:0;box-shadow:none;width:210mm;min-height:auto}
+    .qr-block,#qr,.moment{break-inside:avoid;page-break-inside:avoid}
+    #qr img,#qr svg{width:58mm!important;height:58mm!important}
+    .no-print{display:none!important}
+  }
+  .toolbar{max-width:210mm;margin:14px auto 0;text-align:center}
+  .toolbar button{
+    background:var(--primary);color:#fff;border:0;border-radius:10px;padding:10px 18px;
+    font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;
+  }
+  .toolbar span{display:block;color:var(--muted);font-size:12px;margin-top:6px}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Cabeçalho -->
+  <div class="header">
+    <img class="brand-mark" src="assets/logo-ser-amor.png" alt="Igreja Ser Amor">
+    <div>
+      <div class="brand-name">IGREJA SER AMOR · VOLUNTÁRIOS</div>
+      <div class="title">Check-in <em>&amp;</em> Check-out</div>
+    </div>
+  </div>
+
+  <!-- QR central -->
+  <div class="qr-block">
+    <div class="qr-call"><span class="ico">📷</span> Aponte a câmera do celular para o QR Code</div>
+    <div id="qr"><img src="assets/qrcode-checkin-checkout.jpg" alt="QR Code de check-in e check-out"></div>
+    <div class="qr-url">Sem leitor? Acesse: <b>servir.igrejaseramor.com.br</b></div>
+  </div>
+
+  <!-- Dois momentos: chegada (verde) e saída (azul) -->
+  <div class="moments">
+
+    <!-- AO CHEGAR — check-in -->
+    <div class="moment" style="--c:#16A34A;--bg:#F0FDF4">
+      <div class="bar">
+        <svg class="bar-ico" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        AO CHEGAR — FAÇA O CHECK-IN E RECEBA O CRACHÁ
+      </div>
+      <div class="body">
+        <div class="co-line"><span class="dot">1</span><div>Escaneie o QR Code e faça o <b>check-in</b>: informe seu telefone e confirme a chegada.</div></div>
+        <div class="co-line"><span class="dot">2</span><div>Pegue seu <b>crachá</b> com um voluntário da <b>Base de Voluntários</b>.</div></div>
+        <div class="co-ex"><b>Áreas que utilizam crachá:</b> Acolhimento, Apoio, Clubinho, Base, Iluminação, Multimídia, Som, Transmissão</div>
+        <div class="co-line"><span class="dot">3</span><div>Crachá em mãos = pronto para servir! 🙌</div></div>
+      </div>
+    </div>
+
+    <!-- AO SAIR — check-out -->
+    <div class="moment" style="--c:#2563EB;--bg:#EFF4FF">
+      <div class="bar">
+        <svg class="bar-ico" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        AO SAIR — FAÇA O CHECK-OUT E DEVOLVA O CRACHÁ
+      </div>
+      <div class="body">
+        <div class="co-line"><span class="dot">1</span><div>Antes de ir embora, faça o <b>check-out</b> no mesmo QR Code.</div></div>
+        <div class="co-line"><span class="dot">2</span><div>Guarde o crachá no <b>escaninho</b>, na <b>letra do alfabeto</b> correspondente à inicial do seu nome.</div></div>
+        <div class="co-ex">Exemplo: <b>João</b> → escaninho da letra <b>J</b></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Rodapé -->
+  <div class="footer">
+    <div>Dúvidas? Procure um voluntário da <b>Base de Voluntários</b> ou seu líder.</div>
+    <div>Igreja Ser Amor</div>
+  </div>
+
+</div>
+
+<div class="toolbar no-print">
+  <button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+  <span>QR e logo em <code>docs/assets/</code> · imprima em A4 retrato</span>
+</div>
+
+</body>
+</html>
