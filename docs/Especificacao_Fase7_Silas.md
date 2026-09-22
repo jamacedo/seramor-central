@@ -21,6 +21,7 @@
 | Ferramentas na V1 do plugin | Três | **Duas** (`consultar_pendencias_escala`, `consultar_escala`) | Registrar uma tool que sempre erra ensina o Silas a oferecer o que não existe. A terceira entra com o Notion mapeado |
 | Telefone "suspeito" | Categoria própria | **Não implementada** | Sem regra de validade acordada, viraria pendência falsa. Ficam `present`/`missing`/`error` |
 | Homologação | Ambiente de teste | **Não existe: só produção** | Toda a regressão roda sobre matrizes sintéticas (função pura), sem abrir planilha real |
+| Aba `Escala <Mês>` ausente | `MONTH_SHEET_NOT_FOUND` = fonte não verificada | **Categoria própria `not_scheduled`**, que não bloqueia a conclusão | Medição em produção (21/09/2026): 3 das 12 áreas não têm aba em setembro, e isso é estado normal. Com a regra estrita, **todo** relatório sairia `partial` e nunca permitiria "sem pendências". Flag `ABA_MES_AUSENTE_BLOQUEIA` restaura o estrito |
 
 ---
 
@@ -101,10 +102,26 @@ esta fase, mas publicar uma nova versão sem checar seria irresponsável.
   (telefone — fórmula que devolve vazio ou `#N/A` só aparece aqui).
 - `try/catch` por área: uma planilha inacessível vira `SOURCE_UNAVAILABLE` e
   entra em `meta.unverified_sources`; as outras 11 continuam valendo.
-- **Orçamento de tempo:** `SILAS_CONFIG.DEADLINE_MS = 45000`. Ao estourar, as
-  áreas restantes viram `UPSTREAM_TIMEOUT` não verificado e a resposta sai
-  `status: partial` — em vez de estourar o timeout do plugin.
-  **Calibrar com `test_silas_smoke_producao_todas` antes de ativar.**
+
+**Três estados de fonte, deliberadamente distintos:**
+
+| `source_status` | `coverage_status` | Efeito na conclusão | Quando |
+|---|---|---|---|
+| `ok` | avalia a regra | normal | Aba do mês lida |
+| `no_month_sheet` | `not_scheduled` | **não bloqueia**; sai em `meta.no_schedule_sources` e em `warnings` | A área não escala neste mês — estado normal |
+| `unavailable` / `timeout` | `unverified` | bloqueia: `read_complete: false`, `status: partial` | Permissão, cota, erro de leitura ou estouro de orçamento |
+
+Área **sem aba do mês** ≠ área **com aba vazia**. A segunda gera pendência de
+cobertura; a primeira não gera nada, porque não sabemos nada sobre a escala dela.
+Ela continua **nomeada** na resposta: o relatório cita as áreas sem escala no
+mês sem chamá-las de falha nem de pendência.
+
+- **Orçamento de tempo:** `SILAS_CONFIG.DEADLINE_MS = 40000`, calibrado por
+  medição (21/09/2026: **23,2s** para as 12 áreas, 9 com aba do mês). O pior
+  caso é cold start (~8s) + orçamento + a última área iniciada + serialização,
+  que cabe nos 60s do plugin. Ao estourar, as áreas restantes viram
+  `UPSTREAM_TIMEOUT` não verificado e a resposta sai `status: partial`.
+  Remedir com `test_silas_smoke_producao_todas` se as planilhas crescerem.
 - Sem cache na V1. Se a medição exigir, o cache precisa carregar o horário da
   leitura no `meta` — relatório programado não pode fingir atualidade.
 - Data omitida: primeiro domingo **estritamente posterior** a hoje em
@@ -161,7 +178,7 @@ real deste backend; use-as como transporte simulado nos testes do plugin.
 |---|---|
 | `01_…sem_pendencias` | `all_clear_allowed: true` → única frase de "tudo certo" permitida |
 | `02_…com_pendencias` | Leitura completa com 5 pendências de 3 tipos |
-| `03_…parcial` | `status: partial` com pendências **e** fontes não verificadas — relatar os dois |
+| `03_…parcial` | `status: partial` com pendências, uma fonte **não verificada** (Produção) e uma **sem aba do mês** (Ekoe) — três coisas diferentes na mesma resposta |
 | `04_…parcial_inconclusiva` | `items: []` com `conclusion: inconclusive` → **não** dizer "tudo certo" |
 | `05_consultar_resumo` | `pagination: null`, sem detalhes |
 | `06/07_…completa_pagina1/2` | `has_more`, `next_cursor`, continuação |
@@ -170,6 +187,7 @@ real deste backend; use-as como transporte simulado nos testes do plugin.
 | `10_erro_nao_autenticado` | Credencial recusada |
 | `11_erro_argumento_invalido` | Data que não é domingo |
 | `12_erro_cursor_expirado` | `STALE_CURSOR` → recomeçar a listagem uma vez |
+| `13_…areas_sem_aba_do_mes` | **O caso real de produção:** 3 áreas sem aba do mês, 9 cobertas → `complete` + `all_clear_allowed: true`, com as 3 nomeadas em `meta.no_schedule_sources`. O relatório deve dizer "sem pendências" **e** citar as três |
 
 **Regras do cliente HTTP** (detalhe em `02_DIRECIONAMENTO_PLUGIN_HERMES.md` §6):
 redirect só para `script.google.com` / `script.googleusercontent.com`, poucos
@@ -189,7 +207,7 @@ SOUL → jobs de sexta e sábado **criados pausados**, com destino
 
 | Item | Tipo | Observação |
 |---|---|---|
-| Medição das 12 áreas | Técnico | Calibrar `DEADLINE_MS` com dado real antes de ativar os relatórios |
+| ~~Medição das 12 áreas~~ | ✅ Feito | 23,2s em 21/09/2026 → `DEADLINE_MS = 40000`. Remedir se as planilhas crescerem |
 | Conferência dos 12 spreadsheetIds | Config | O `04_CONFIGURACAO_AREAS.json` bate com `ADMIN_CONFIG.ORIGEM`; validar título de cada arquivo antes de expor |
 | `ADMIN_TOKEN` em produção | Segurança | Anterior a esta fase; conferir antes do deploy |
 | Onboarding/Notion | Escopo | Fora. Mapear fonte, propriedades, fases e estados terminais antes de habilitar |

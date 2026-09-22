@@ -167,6 +167,31 @@ function test_silas_cobertura() {
   _sEq(f4.status, 'ok', 'consulta da manhã em Foto e Vídeo noturno não cria pendência falsa');
 }
 
+// ===================== ESTADO DA FONTE =====================
+
+function test_silas_fonte() {
+  var som = silasRegra_('som');
+  var vazio = { manha: 0, noite: 0 };
+
+  _sEq(silasCoberturaDeFonte_('ok', som, { manha: 1, noite: 1 }).status, 'ok', 'fonte lida e coberta');
+  _sEq(silasCoberturaDeFonte_('ok', som, { manha: 1, noite: 0 }).status, 'pending', 'fonte lida com falta');
+
+  // Aba do mês ausente é estado NORMAL (há áreas que não escalam todo mês):
+  // não vira falta de cobertura nem falha de leitura.
+  var semAba = silasCoberturaDeFonte_('no_month_sheet', som, vazio);
+  _sEq(semAba.status, 'not_scheduled', 'sem aba do mês: área não avaliada, não pendente');
+  _sEq(semAba.faltas.length, 0, 'sem aba do mês não inventa falta de cobertura');
+
+  // Falha real de leitura continua bloqueando a conclusão.
+  _sEq(silasCoberturaDeFonte_('unavailable', som, vazio).status, 'unverified', 'fonte indisponível fica não verificada');
+  _sEq(silasCoberturaDeFonte_('timeout', som, vazio).status, 'unverified', 'estouro de orçamento fica não verificado');
+
+  // Área vazia COM aba do mês é diferente de área sem aba: aqui há pendência.
+  _sEq(silasCoberturaDeFonte_('ok', som, vazio).faltas.length, 2, 'aba existe e está vazia: duas faltas');
+
+  _sEq(SILAS_CONFIG.ABA_MES_AUSENTE_BLOQUEIA, false, 'aba ausente não bloqueia (decisão do projeto)');
+}
+
 // ===================== ROTEADOR, AUTH E CONTRATO =====================
 
 function test_silas_roteador() {
@@ -265,6 +290,7 @@ function test_silas_todos() {
   test_silas_datas();
   test_silas_normalizacao();
   test_silas_cobertura();
+  test_silas_fonte();
   test_silas_roteador();
   test_silas_parametros();
   test_silas_paginacao();

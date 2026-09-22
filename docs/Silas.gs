@@ -31,9 +31,19 @@ var SILAS_CONFIG = {
   API_VERSION: '1',
   CLIENT_ID: 'silas-voluntarios',
 
-  // Orçamento de leitura. O plugin trabalha com ~60s; paramos antes e
-  // devolvemos status=partial em vez de estourar o timeout do cliente.
-  DEADLINE_MS: 45000,
+  // Orçamento de leitura, calibrado por medição (21/09/2026: 12 áreas em
+  // 23,2s, 9 com aba do mês). O plugin trabalha com ~60s; o pior caso aqui é
+  // cold start (~8s) + DEADLINE + a última área iniciada + serialização.
+  // Paramos antes e devolvemos status=partial em vez de estourar o cliente.
+  DEADLINE_MS: 40000,
+
+  // Aba `Escala <Mês>` ausente é ESTADO NORMAL: há áreas que não escalam em
+  // todo mês. Com `false`, essas áreas não bloqueiam a conclusão — ficam
+  // marcadas como `not_scheduled` e são nomeadas em `meta.no_schedule_sources`
+  // e em `warnings`, para o relatório citá-las sem chamá-las de falha nem de
+  // escala vazia. Virar `true` restaura o comportamento estrito do
+  // direcionamento (toda aba ausente = fonte não verificada).
+  ABA_MES_AUSENTE_BLOQUEIA: false,
 
   MAX_BODY_BYTES: 16384,
   LIMITE_PADRAO: 50,
@@ -255,12 +265,7 @@ function silasEscalas_(reqId, op, p, t0) {
     for (var j = 0; j < a.assignments.length; j++) porPeriodo[a.assignments[j].period]++;
 
     var regra = silasRegra_(a.area.id);
-    var cobertura;
-    if (a.source_status !== 'ok') {
-      cobertura = { status: 'unverified', faltas: [] };
-    } else {
-      cobertura = silasAvaliarCobertura_(regra, porPeriodo);
-    }
+    var cobertura = silasCoberturaDeFonte_(a.source_status, regra, porPeriodo);
 
     areas.push({
       area: a.area.id,
@@ -371,6 +376,7 @@ function silasEscalas_(reqId, op, p, t0) {
       source_count: escopo.length,
       successful_source_count: lido.successful_source_count,
       unverified_sources: lido.unverified_sources,
+      no_schedule_sources: lido.no_schedule_sources,
       read_complete: readComplete,
       all_clear_allowed: allClear,
       warnings: lido.warnings
@@ -407,7 +413,7 @@ function silasOrdenarIssues_(issues, escopo) {
 function silasLerAreas_(escopo, alvoIso, t0) {
   var out = {
     read_started_at: silasAgoraIso_(),
-    areas: [], unverified_sources: [], warnings: [],
+    areas: [], unverified_sources: [], no_schedule_sources: [], warnings: [],
     successful_source_count: 0, read_complete: true
   };
 
@@ -426,11 +432,17 @@ function silasLerAreas_(escopo, alvoIso, t0) {
     if (r.source_status === 'ok') {
       out.successful_source_count++;
       for (var w = 0; w < r.warnings.length; w++) out.warnings.push(r.warnings[w]);
+    } else if (r.source_status === 'no_month_sheet' && !SILAS_CONFIG.ABA_MES_AUSENTE_BLOQUEIA) {
+      // Área que não escala neste mês: fato conhecido, não falha de leitura.
+      // Não gera pendência de cobertura (não sabemos nada sobre a escala dela)
+      // e não impede a conclusão — mas sai nomeada, para o relatório citar.
+      out.no_schedule_sources.push({ area: area.id, sheet: r.sheet_name });
+      out.warnings.push({ code: 'NO_MONTH_SHEET', area: area.id, sheet: r.sheet_name });
     } else {
       out.read_complete = false;
       out.unverified_sources.push({
         area: area.id,
-        code: r.source_status === 'missing_month_sheet' ? 'MONTH_SHEET_NOT_FOUND' : 'SOURCE_UNAVAILABLE'
+        code: r.source_status === 'no_month_sheet' ? 'MONTH_SHEET_NOT_FOUND' : 'SOURCE_UNAVAILABLE'
       });
     }
   }
@@ -451,7 +463,7 @@ function silasLerArea_(area, alvoIso) {
 
   try {
     var sh = SpreadsheetApp.openById(id).getSheetByName(nomeAba);
-    if (!sh) return silasAreaVazia_(area, alvoIso, 'missing_month_sheet');
+    if (!sh) return silasAreaVazia_(area, alvoIso, 'no_month_sheet');
 
     var lastRow = sh.getLastRow();
     var lastCol = sh.getLastColumn();
@@ -548,6 +560,23 @@ function silasNormalizar_(area, alvoIso, nomeAba, valores, exibidos) {
     }
   }
   return res;
+}
+
+/**
+ * Decide a cobertura conforme o estado da fonte. Separado de silasEscalas_
+ * para poder ser testado sem abrir planilha (não há homologação).
+ *  - ok            → avalia a regra
+ *  - no_month_sheet→ `not_scheduled`: a área não escala neste mês. Não gera
+ *                    falta (não sabemos nada sobre a escala dela) e não
+ *                    bloqueia a conclusão — mas sai nomeada no meta.
+ *  - demais        → `unverified`: leitura falhou, bloqueia a conclusão.
+ */
+function silasCoberturaDeFonte_(sourceStatus, regra, porPeriodo) {
+  if (sourceStatus === 'ok') return silasAvaliarCobertura_(regra, porPeriodo);
+  if (sourceStatus === 'no_month_sheet' && !SILAS_CONFIG.ABA_MES_AUSENTE_BLOQUEIA) {
+    return { status: 'not_scheduled', faltas: [] };
+  }
+  return { status: 'unverified', faltas: [] };
 }
 
 /** all_of: uma falta por período vazio. any_of: no máximo UMA falta no grupo. */

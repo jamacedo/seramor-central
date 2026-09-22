@@ -250,6 +250,7 @@
         "code": "SOURCE_UNAVAILABLE"
       }
     ],
+    "no_schedule_sources": [],
     "read_complete": false,
     "all_clear_allowed": false,
     "warnings": []

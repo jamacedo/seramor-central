@@ -87,6 +87,7 @@
     "source_count": 1,
     "successful_source_count": 1,
     "unverified_sources": [],
+    "no_schedule_sources": [],
     "read_complete": true,
     "all_clear_allowed": false,
     "warnings": []

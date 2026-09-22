@@ -245,6 +245,7 @@
     "source_count": 12,
     "successful_source_count": 12,
     "unverified_sources": [],
+    "no_schedule_sources": [],
     "read_complete": true,
     "all_clear_allowed": true,
     "warnings": []
