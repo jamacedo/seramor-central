@@ -1,0 +1,260 @@
+{
+  "api_version": "1",
+  "request_id": "FIXTURE-0000-0000-0000",
+  "operation": "voluntarios.escalas.pendencias",
+  "ok": true,
+  "status": "complete",
+  "data": {
+    "target_date": "2026-09-27",
+    "provisional": true,
+    "scope": {
+      "areas": [
+        "transmissao",
+        "som",
+        "multimidia",
+        "louvor",
+        "logistica",
+        "foto_video",
+        "clubinho",
+        "central",
+        "acolhimento",
+        "iluminacao",
+        "ekoe",
+        "producao"
+      ],
+      "periodo": null
+    },
+    "conclusion": "clear",
+    "summary": {
+      "assignment_count": 23,
+      "coverage_issue_count": 0,
+      "phone_issue_row_count": 0,
+      "invalid_row_count": 0
+    },
+    "areas": [
+      {
+        "area": "transmissao",
+        "label": "Transmissão",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 0,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "som",
+        "label": "Som",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "multimidia",
+        "label": "Multimídia",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "louvor",
+        "label": "Louvor",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "logistica",
+        "label": "Logística",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "foto_video",
+        "label": "Foto e Vídeo",
+        "coverage_rule": {
+          "mode": "any_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "clubinho",
+        "label": "Clubinho",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "central",
+        "label": "Central",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "acolhimento",
+        "label": "Acolhimento",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "iluminacao",
+        "label": "Iluminação",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "ekoe",
+        "label": "Ekoe",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "producao",
+        "label": "Produção",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      }
+    ],
+    "items": []
+  },
+  "meta": {
+    "timezone": "America/Sao_Paulo",
+    "read_started_at": "2026-09-25T11:00:00Z",
+    "read_finished_at": "2026-09-25T11:00:07Z",
+    "source_count": 12,
+    "successful_source_count": 12,
+    "unverified_sources": [],
+    "read_complete": true,
+    "all_clear_allowed": true,
+    "warnings": []
+  },
+  "pagination": {
+    "limit": 50,
+    "returned": 0,
+    "total": 0,
+    "has_more": false,
+    "next_cursor": null
+  },
+  "error": null
+}

@@ -1,0 +1,391 @@
+{
+  "api_version": "1",
+  "request_id": "FIXTURE-0000-0000-0000",
+  "operation": "voluntarios.escalas.consultar",
+  "ok": true,
+  "status": "complete",
+  "data": {
+    "target_date": "2026-09-27",
+    "provisional": true,
+    "scope": {
+      "areas": [
+        "transmissao",
+        "som",
+        "multimidia",
+        "louvor",
+        "logistica",
+        "foto_video",
+        "clubinho",
+        "central",
+        "acolhimento",
+        "iluminacao",
+        "ekoe",
+        "producao"
+      ],
+      "periodo": null
+    },
+    "conclusion": "pending",
+    "summary": {
+      "assignment_count": 21,
+      "coverage_issue_count": 2,
+      "phone_issue_row_count": 2,
+      "invalid_row_count": 1
+    },
+    "areas": [
+      {
+        "area": "transmissao",
+        "label": "Transmissão",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 0,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "som",
+        "label": "Som",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "pending",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 0
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "multimidia",
+        "label": "Multimídia",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "louvor",
+        "label": "Louvor",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "logistica",
+        "label": "Logística",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "foto_video",
+        "label": "Foto e Vídeo",
+        "coverage_rule": {
+          "mode": "any_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "pending",
+        "assignments_by_period": {
+          "manha": 0,
+          "noite": 0
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "clubinho",
+        "label": "Clubinho",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "central",
+        "label": "Central",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "acolhimento",
+        "label": "Acolhimento",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 2,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "iluminacao",
+        "label": "Iluminação",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "ekoe",
+        "label": "Ekoe",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      },
+      {
+        "area": "producao",
+        "label": "Produção",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 1,
+          "noite": 1
+        },
+        "source_status": "ok"
+      }
+    ],
+    "items": [
+      {
+        "assignment_ref": "central:Escala Setembro:2:manha",
+        "area": "central",
+        "date": "2026-09-27",
+        "period": "manha",
+        "volunteer_name": "Voluntário Exemplo 1",
+        "function": "Função Exemplo",
+        "phone_status": "present",
+        "source_ref": {
+          "sheet": "Escala Setembro",
+          "row": 2
+        }
+      },
+      {
+        "assignment_ref": "central:Escala Setembro:3:noite",
+        "area": "central",
+        "date": "2026-09-27",
+        "period": "noite",
+        "volunteer_name": "Voluntário Exemplo 2",
+        "function": "Função Exemplo",
+        "phone_status": "present",
+        "source_ref": {
+          "sheet": "Escala Setembro",
+          "row": 3
+        }
+      },
+      {
+        "assignment_ref": "acolhimento:Escala Setembro:2:manha",
+        "area": "acolhimento",
+        "date": "2026-09-27",
+        "period": "manha",
+        "volunteer_name": "Voluntária Exemplo A",
+        "function": "Recepção",
+        "phone_status": "missing",
+        "source_ref": {
+          "sheet": "Escala Setembro",
+          "row": 2
+        }
+      },
+      {
+        "assignment_ref": "acolhimento:Escala Setembro:3:manha",
+        "area": "acolhimento",
+        "date": "2026-09-27",
+        "period": "manha",
+        "volunteer_name": "Voluntário Exemplo B",
+        "function": "Recepção",
+        "phone_status": "error",
+        "source_ref": {
+          "sheet": "Escala Setembro",
+          "row": 3
+        }
+      },
+      {
+        "assignment_ref": "acolhimento:Escala Setembro:3:noite",
+        "area": "acolhimento",
+        "date": "2026-09-27",
+        "period": "noite",
+        "volunteer_name": "Voluntário Exemplo B",
+        "function": "Recepção",
+        "phone_status": "error",
+        "source_ref": {
+          "sheet": "Escala Setembro",
+          "row": 3
+        }
+      },
+      {
+        "assignment_ref": "iluminacao:Escala Setembro:2:manha",
+        "area": "iluminacao",
+        "date": "2026-09-27",
+        "period": "manha",
+        "volunteer_name": "Voluntário Exemplo 1",
+        "function": "Função Exemplo",
+        "phone_status": "present",
+        "source_ref": {
+          "sheet": "Escala Setembro",
+          "row": 2
+        }
+      },
+      {
+        "assignment_ref": "iluminacao:Escala Setembro:3:noite",
+        "area": "iluminacao",
+        "date": "2026-09-27",
+        "period": "noite",
+        "volunteer_name": "Voluntário Exemplo 2",
+        "function": "Função Exemplo",
+        "phone_status": "present",
+        "source_ref": {
+          "sheet": "Escala Setembro",
+          "row": 3
+        }
+      },
+      {
+        "assignment_ref": "ekoe:Escala Setembro:2:manha",
+        "area": "ekoe",
+        "date": "2026-09-27",
+        "period": "manha",
+        "volunteer_name": "Voluntário Exemplo 1",
+        "function": "Função Exemplo",
+        "phone_status": "present",
+        "source_ref": {
+          "sheet": "Escala Setembro",
+          "row": 2
+        }
+      },
+      {
+        "assignment_ref": "ekoe:Escala Setembro:3:noite",
+        "area": "ekoe",
+        "date": "2026-09-27",
+        "period": "noite",
+        "volunteer_name": "Voluntário Exemplo 2",
+        "function": "Função Exemplo",
+        "phone_status": "present",
+        "source_ref": {
+          "sheet": "Escala Setembro",
+          "row": 3
+        }
+      },
+      {
+        "assignment_ref": "producao:Escala Setembro:2:manha",
+        "area": "producao",
+        "date": "2026-09-27",
+        "period": "manha",
+        "volunteer_name": "Voluntário Exemplo 1",
+        "function": "Função Exemplo",
+        "phone_status": "present",
+        "source_ref": {
+          "sheet": "Escala Setembro",
+          "row": 2
+        }
+      }
+    ]
+  },
+  "meta": {
+    "timezone": "America/Sao_Paulo",
+    "read_started_at": "2026-09-25T11:00:00Z",
+    "read_finished_at": "2026-09-25T11:00:07Z",
+    "source_count": 12,
+    "successful_source_count": 12,
+    "unverified_sources": [],
+    "read_complete": true,
+    "all_clear_allowed": false,
+    "warnings": []
+  },
+  "pagination": {
+    "limit": 10,
+    "returned": 10,
+    "total": 21,
+    "has_more": true,
+    "next_cursor": "eyJvIjoidm9sdW50YXJpb3MuZXNjYWxhcy5jb25zdWx0YXIiLCJzIjoiYzA3NTkzM2NmNjVlMjc0MCIsImkiOjIwfQ=="
+  },
+  "error": null
+}

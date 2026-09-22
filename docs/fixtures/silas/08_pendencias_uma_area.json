@@ -1,0 +1,102 @@
+{
+  "api_version": "1",
+  "request_id": "FIXTURE-0000-0000-0000",
+  "operation": "voluntarios.escalas.pendencias",
+  "ok": true,
+  "status": "complete",
+  "data": {
+    "target_date": "2026-09-27",
+    "provisional": true,
+    "scope": {
+      "areas": [
+        "acolhimento"
+      ],
+      "periodo": null
+    },
+    "conclusion": "pending",
+    "summary": {
+      "assignment_count": 3,
+      "coverage_issue_count": 0,
+      "phone_issue_row_count": 2,
+      "invalid_row_count": 1
+    },
+    "areas": [
+      {
+        "area": "acolhimento",
+        "label": "Acolhimento",
+        "coverage_rule": {
+          "mode": "all_of",
+          "periods": [
+            "manha",
+            "noite"
+          ]
+        },
+        "coverage_status": "ok",
+        "assignments_by_period": {
+          "manha": 2,
+          "noite": 1
+        },
+        "source_status": "ok"
+      }
+    ],
+    "items": [
+      {
+        "issue_id": "acolhimento:PHONE_MISSING:2",
+        "type": "PHONE_MISSING",
+        "area": "acolhimento",
+        "periods": [
+          "manha"
+        ],
+        "volunteer_name": "Voluntária Exemplo A",
+        "source_ref": {
+          "sheet": "Escala Setembro",
+          "row": 2
+        }
+      },
+      {
+        "issue_id": "acolhimento:PHONE_ERROR:3",
+        "type": "PHONE_ERROR",
+        "area": "acolhimento",
+        "periods": [
+          "manha",
+          "noite"
+        ],
+        "volunteer_name": "Voluntário Exemplo B",
+        "source_ref": {
+          "sheet": "Escala Setembro",
+          "row": 3
+        }
+      },
+      {
+        "issue_id": "acolhimento:ROW_INVALID:4",
+        "type": "ROW_INVALID",
+        "area": "acolhimento",
+        "periods": [],
+        "volunteer_name": "Voluntária Exemplo C",
+        "source_ref": {
+          "sheet": "Escala Setembro",
+          "row": 4
+        }
+      }
+    ]
+  },
+  "meta": {
+    "timezone": "America/Sao_Paulo",
+    "read_started_at": "2026-09-25T11:00:00Z",
+    "read_finished_at": "2026-09-25T11:00:07Z",
+    "source_count": 1,
+    "successful_source_count": 1,
+    "unverified_sources": [],
+    "read_complete": true,
+    "all_clear_allowed": false,
+    "warnings": []
+  },
+  "pagination": {
+    "limit": 50,
+    "returned": 3,
+    "total": 3,
+    "has_more": false,
+    "next_cursor": null
+  },
+  "error": null
+}

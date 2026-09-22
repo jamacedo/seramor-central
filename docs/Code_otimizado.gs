@@ -79,7 +79,19 @@ function ck_() {
 
 function doPost(e) {
   try {
-    var body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    var raw = (e && e.postData && e.postData.contents) || '{}';
+    var body = JSON.parse(raw);
+
+    // Integração Silas/Hermes (Fase 7) — handlers em Silas.gs. Vem ANTES do
+    // switch de `action`: o corpo é roteado por `operation`, com credencial e
+    // allowlist próprias, de modo que o token de leitura do Silas não alcance
+    // nenhuma ação de escrita (adminCheckin/adminUpdatePhone/checkin/...).
+    if (body && body.operation) {
+      var sres = silasRoute_(body, raw.length);
+      tlog('fim ' + body.operation);
+      return json(sres);
+    }
+
     var res;
     switch (body.action) {
       case 'resolve':                 res = resolve(body); break;

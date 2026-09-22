@@ -1,0 +1,19 @@
+{
+  "api_version": "1",
+  "request_id": "FIXTURE-0000-0000-0000",
+  "operation": "voluntarios.onboarding.pendencias",
+  "ok": false,
+  "status": "error",
+  "data": null,
+  "meta": {
+    "timezone": "America/Sao_Paulo",
+    "read_complete": false,
+    "all_clear_allowed": false
+  },
+  "pagination": null,
+  "error": {
+    "code": "NOTION_NOT_CONFIGURED",
+    "message": "O acompanhamento de onboarding ainda não está disponível.",
+    "retryable": false
+  }
+}
