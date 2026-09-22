@@ -110,6 +110,26 @@ O Content Service do Apps Script **redireciona a resposta** para
 - exceção local vira erro curto e seguro — nunca `str(exception)` cru, que pode
   carregar URL, token ou dado pessoal.
 
+### Comportamento confirmado em produção (22/09/2026)
+
+O POST ao `/exec` responde **302** para `script.googleusercontent.com`, onde o
+resultado fica guardado. O cliente precisa seguir esse salto **trocando para
+GET**, sem reenviar o corpo.
+
+Reenviar o POST no redirect foi testado e falha: devolve **HTTP 405 com a página
+de erro do Drive em HTML** — e, pior, mandaria a credencial para outro domínio.
+No `curl`, o erro aparece com `-X POST` (que força o método também na requisição
+redirecionada); sem `-X`, funciona. Em Python, `requests` e `urllib` já fazem a
+troca correta por padrão em 302/303 — o cuidado é **não** configurar
+"preservar método no redirect" achando que é mais correto.
+
+Medição real: `params: {"area": "som"}` → **4,1s** com o redirect incluído
+(1 salto). A leitura interna das 12 áreas leva ~23s; some ~1–2s do redirect ao
+dimensionar o timeout.
+
+Essa é exatamente a diferença entre o front e o plugin: o navegador segue o
+redirect sozinho, e por isso o app nunca esbarrou nisso.
+
 ---
 
 ## 6. Schemas das duas ferramentas
