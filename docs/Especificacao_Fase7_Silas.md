@@ -87,9 +87,10 @@ ID de planilha, token.
 | `GET` | `doGet` segue sendo health check e ignora parâmetros — não há caminho de consulta por URL |
 | Texto das fontes | Conteúdo de célula é **dado**, nunca instrução. Nada do que vem da planilha muda endpoint, escopo ou destino |
 
-**Pré-requisito de deploy:** conferir que `ADMIN_TOKEN` está setada em produção.
-Sem ela, as três ações de escrita do admin ficam abertas — problema anterior a
-esta fase, mas publicar uma nova versão sem checar seria irresponsável.
+**Pré-requisito de deploy — ✅ verificado (22/09/2026):** `ADMIN_TOKEN` está
+setada em produção, então as três ações de escrita do admin já estão com gate.
+A verificação importava porque `requireAdmin_` falha **aberta**: sem a property,
+publicar uma versão nova manteria essas rotas acessíveis sem credencial.
 
 ---
 
@@ -151,8 +152,10 @@ medir tempo. Rodar fora da janela de culto.
 
 1. Copiar `Silas.gs` e `Silas_test.gs` para o projeto Apps Script; aplicar o
    desvio do `doPost` (`Code_otimizado.gs`).
-2. Conferir `ADMIN_TOKEN` (§4) e criar a Script Property **`SILAS_TOKEN`** com um
-   segredo novo — não reaproveitar credencial existente.
+2. Criar a Script Property **`SILAS_TOKEN`** com um segredo novo
+   (`openssl rand -hex 32`) — não reaproveitar credencial existente.
+   Propriedade é lida em tempo de execução: vale na requisição seguinte, sem
+   reimplantar. (`ADMIN_TOKEN`, §4, já verificado.)
 3. `test_silas_todos` verde.
 4. `test_silas_smoke_producao_todas` → ajustar `DEADLINE_MS` se necessário.
 5. **Implantar → Gerenciar implantações → editar a existente → Nova versão.**
@@ -209,6 +212,6 @@ SOUL → jobs de sexta e sábado **criados pausados**, com destino
 |---|---|---|
 | ~~Medição das 12 áreas~~ | ✅ Feito | 23,2s em 21/09/2026 → `DEADLINE_MS = 40000`. Remedir se as planilhas crescerem |
 | Conferência dos 12 spreadsheetIds | Config | O `04_CONFIGURACAO_AREAS.json` bate com `ADMIN_CONFIG.ORIGEM`; validar título de cada arquivo antes de expor |
-| `ADMIN_TOKEN` em produção | Segurança | Anterior a esta fase; conferir antes do deploy |
+| ~~`ADMIN_TOKEN` em produção~~ | ✅ Verificado | 22/09/2026: setada; as rotas de escrita do admin estão com gate |
 | Onboarding/Notion | Escopo | Fora. Mapear fonte, propriedades, fases e estados terminais antes de habilitar |
 | Cadastro de responsáveis por área | Futuro | `schedule_owner` não é usado na V1; prepara cobrança futura, que não está autorizada |
